@@ -65,6 +65,42 @@ void main() {
     }
   });
 
+  test('web: writer writes OPFS and reads back', () async {
+    final bytes = base64Decode(_fixtureBase64);
+    final table = ParquetReader.fromBytes(bytes).readTableSync();
+    final path = 'parquet-opfs-test-${DateTime.now().microsecondsSinceEpoch}';
+    addTearDown(() async {
+      try {
+        final cleanup = await BlitSource.open(
+          path,
+          create: false,
+          readOnly: false,
+        );
+        await cleanup.file.delete();
+        await cleanup.close();
+      } catch (_) {
+        // Best-effort cleanup.
+      }
+    });
+
+    await writeParquetTableToFile(
+      table,
+      path,
+      options: const ParquetWriterOptions(compression: CompressionType.snappy),
+    );
+    final source = await openSource('opfs://$path');
+    try {
+      final out = await ParquetReader.open(source);
+      final result = await out.readTable();
+      expect(result.numRows, 4);
+      expect((result['i64'] as Int64Column).getInt(2), -2);
+      expect((result['s'] as BinaryColumn).getString(1), 'beta');
+      expect((result['lst'] as ListColumn).getList(2), [0, 1]);
+    } finally {
+      await source.close();
+    }
+  });
+
   test('web: blit IndexedDB backend', () async {
     final bytes = base64Decode(_fixtureBase64);
     final path = 'parquet-web-test-${DateTime.now().microsecondsSinceEpoch}';

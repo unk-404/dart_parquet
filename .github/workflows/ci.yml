@@ -30,13 +30,13 @@ jobs:
       - name: Format check
         if: matrix.os == 'ubuntu-latest'
         run: dart format --output=none --set-exit-if-changed .
-      - run: dart test
+      - run: dart test -j 4
       - name: Chrome tests
         if: matrix.os == 'ubuntu-latest'
         env:
           CHROME_EXECUTABLE: /usr/bin/google-chrome
         run: >-
-          dart test -p chrome
+          dart test -j 4 -p chrome
           test/unit/compression_test.dart
           test/unit/encodings_test.dart
           test/web
@@ -77,6 +77,12 @@ jobs:
         run: |
           dart run benchmark_test --output jsonl --compile aot benchmark/parquet_bench_test.dart > build/bench/aot.raw.jsonl
           grep '^{' build/bench/aot.raw.jsonl > build/bench/aot.jsonl
+      - name: Build Rust benchmark
+        run: |
+          cargo --version
+          cargo build --release --locked --manifest-path benchmark/rust/Cargo.toml
+      - name: Rust benchmarks
+        run: benchmark/rust/target/release/parquet-bench --threads 4 --jsonl build/bench/rust.jsonl
       - name: Render chart
         uses: unk-404/benchcat@master
         with:

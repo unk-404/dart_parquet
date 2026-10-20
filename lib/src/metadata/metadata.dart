@@ -2,8 +2,10 @@
 library;
 
 import '../format/parquet_format.dart';
+import '../io/source.dart';
 import '../schema/schema.dart';
 import '../util/errors.dart';
+import 'page_index.dart';
 
 export '../format/enums.dart' show CompressionType, Encoding, PhysicalType;
 export '../format/parquet_format.dart'
@@ -21,6 +23,7 @@ export '../format/parquet_format.dart'
         SortingColumn,
         Statistics;
 export '../schema/schema.dart' show ColumnDescriptor, ParquetSchema, SchemaNode;
+export 'page_index.dart';
 
 /// Metadata for a whole Parquet file: file metadata, schema and row groups.
 final class ParquetMetadata {
@@ -293,6 +296,38 @@ final class ColumnChunkMetaData {
 
   /// Length of the `ColumnIndex`, if present.
   final int? columnIndexLength;
+
+  /// Reads and parses the `OffsetIndex` for this chunk, if present.
+  OffsetIndex? readOffsetIndex(SyncParquetSource source) {
+    final offset = offsetIndexOffset;
+    final length = offsetIndexLength;
+    if (offset == null || length == null) return null;
+    return parseOffsetIndex(source.read(offset, length));
+  }
+
+  /// Asynchronously reads and parses the `OffsetIndex`, if present.
+  Future<OffsetIndex?> readOffsetIndexAsync(ParquetSource source) async {
+    final offset = offsetIndexOffset;
+    final length = offsetIndexLength;
+    if (offset == null || length == null) return null;
+    return parseOffsetIndex(await source.read(offset, length));
+  }
+
+  /// Reads and parses the `ColumnIndex` for this chunk, if present.
+  ColumnIndex? readColumnIndex(SyncParquetSource source) {
+    final offset = columnIndexOffset;
+    final length = columnIndexLength;
+    if (offset == null || length == null) return null;
+    return parseColumnIndex(source.read(offset, length));
+  }
+
+  /// Asynchronously reads and parses the `ColumnIndex`, if present.
+  Future<ColumnIndex?> readColumnIndexAsync(ParquetSource source) async {
+    final offset = columnIndexOffset;
+    final length = columnIndexLength;
+    if (offset == null || length == null) return null;
+    return parseColumnIndex(await source.read(offset, length));
+  }
 
   /// Alias for [type].
   PhysicalType get physicalType => type;

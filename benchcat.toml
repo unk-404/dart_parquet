@@ -5,11 +5,11 @@ enable_system_font = false
 
 [render]
 title = "parquet-dart benchmarks"
-subtitle = "{platform|local} · Dart {tool_version} · commit {commit}"
+subtitle = "{platform|local} · commit {commit}"
 footer = "Generated from {rows} rows"
 width = 920
 theme = "pastel"
-max_rows = 12
+max_rows = 20
 
 [[series]]
 label = "JIT"
@@ -20,6 +20,11 @@ color = "#7FD1B9"
 label = "AOT"
 input = "build/bench/aot.jsonl"
 color = "#8CB8F0"
+
+[[series]]
+label = "Rust"
+input = "build/bench/rust.jsonl"
+color = "#F2B880"
 
 [[row]]
 id = "read read.flat.snappy"
@@ -64,7 +69,98 @@ unit = "B/s"
 group = "Read"
 
 [[row]]
+id = "read read.flat.snappy.mt"
+label = "Read flat · Snappy · isolates"
+value = "value * 3877970"
+unit = "B/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.zstd.mt"
+label = "Read flat · Zstd · isolates"
+value = "value * 3877970"
+unit = "B/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.brotli.mt"
+label = "Read flat · Brotli · isolates"
+value = "value * 3877970"
+unit = "B/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.lz4.mt"
+label = "Read flat · LZ4_RAW · isolates"
+value = "value * 3877970"
+unit = "B/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.snappy.projection.i64.mt"
+label = "Projection · i64 · isolates"
+value = "value * 800000"
+unit = "B/s"
+group = "Read"
+
+[[row]]
+id = "read read.nested.snappy.mt"
+label = "Nested read · Snappy · isolates"
+value = "value * 730900"
+unit = "B/s"
+group = "Read"
+
+[[row]]
 id = "read read.metadata.snappy"
 label = "Metadata parse"
 unit = "ops/s"
 group = "Metadata"
+
+[[row]]
+id = "write write.flat.snappy"
+label = "Write flat · Snappy"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.flat.zstd"
+label = "Write flat · Zstd"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.flat.brotli"
+label = "Write flat · Brotli"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.flat.lz4"
+label = "Write flat · LZ4_RAW"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.flat.uncompressed"
+label = "Write flat · uncompressed"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.flat.snappy.v2"
+label = "Write flat · Snappy v2"
+value = "value * 3877970"
+unit = "B/s"
+group = "Write"
+
+[[row]]
+id = "write write.nested.snappy"
+label = "Write nested · Snappy"
+value = "value * 730900"
+unit = "B/s"
+group = "Write"

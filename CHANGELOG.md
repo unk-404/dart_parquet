@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.1
+
+- **Writer**: flat and nested LIST/STRUCT/MAP, all physical/logical types,
+  PLAIN + dictionary (with fallback), RLE levels, data pages v1/v2, page/chunk
+  statistics, all 8 codecs, multiple row groups, empty files.
+- Writer APIs: `ParquetWriterOptions`, streaming `ParquetWriter.add`,
+  `writeParquetTable`, flat `ParquetSchemaBuilder`, and native/OPFS output via
+  `writeParquetTableToFile` / `writeParquetTableToBytesFile`.
+- **Reader**: dotted-path nested projection (struct/list/map), statistics-based
+  `rowGroupFilter`, lazy per-row-group `readRowGroups` streaming, and
+  OffsetIndex/ColumnIndex parsing.
+- **Parallel reads**: async `readTable` on memory sources uses up to 8 isolates
+  (`parallelism: auto|1|N`); sync APIs stay on the calling isolate; Web stays
+  single-threaded.
+- Rust arrow-rs benchmark counterpart (`benchmark/rust`, pinned
+  `parquet = "=60.0.0"`) matching every Dart read/write operation, plus opt-in
+  multi-thread read rows; benchcat chart now compares JIT, AOT and Rust.
+- Chrome tests cover Blob, IndexedDB and OPFS writer roundtrips.
+
 ## 0.1.0
 
 - Initial read-only release.

@@ -1,36 +1,47 @@
 # parquet
 
-Pure Dart Apache Parquet reader with VM and Web support.
+Pure Dart Apache Parquet reader and writer with VM and Web support.
 
-![Parquet for Dart benchmarks](https://raw.githubusercontent.com/unk-404/dart_parquet/master/assets/benchmarks.svg)
+![Parquet for Dart vs Rust benchmarks](https://raw.githubusercontent.com/unk-404/dart_parquet/master/assets/benchmarks.svg)
 
-`parquet` reads Parquet files without native libraries or FFI. It runs on the
-Dart VM, dart2js and dart2wasm, and works with in-memory bytes, native files,
-blit OPFS/IndexedDB files, browser `Blob`/`File` slices, and HTTP Range readers.
+`parquet` reads and writes Parquet files without native libraries or FFI. It
+runs on the Dart VM, dart2js and dart2wasm, and works with in-memory bytes,
+native files, blit OPFS/IndexedDB files, browser `Blob`/`File` slices, and HTTP
+Range readers.
 
-> **Status: v0.1.0 — usable read-only release.**
-> Writing, async streaming, page-index/bloom filters and isolate parallelism are
-> planned for v0.1.1/v0.1.2. The format reader (flat and nested) is complete for
-> the supported feature set below.
+> **Status: v0.1.1 — feature-complete beta.**
+> Flat and nested read/write, all codecs, page v1/v2, dictionary/statistics,
+> nested projection, row-group pruning, streaming, page indexes, OPFS write and
+> automatic VM isolate reads are in. Page-index/bloom writing, CRC, predicate
+> pushdown and the long-lived isolate pool land in v0.1.2.
 
 ## Features
 
 - **Pure Dart**, no native dependencies.
-- **VM + Web** (dart2js; dart2wasm target planned).
-- **All Parquet compression codecs**: Uncompressed, Snappy, Gzip, LZO, Brotli,
+- **VM + Web**; the shared import graph is free of `dart:io`/`dart:ffi`.
+- **All Parquet compression codecs**: uncompressed, Snappy, Gzip, LZO, Brotli,
   Zstandard, LZ4_RAW; legacy LZ4 (Hadoop framing) is read.
-- **Encodings**: PLAIN, PLAIN_DICTIONARY/RLE_DICTIONARY, RLE, BIT_PACKED levels,
-  DELTA_BINARY_PACKED, DELTA_LENGTH_BYTE_ARRAY, DELTA_BYTE_ARRAY,
+- **Read encodings**: PLAIN, PLAIN_DICTIONARY/RLE_DICTIONARY, RLE, BIT_PACKED
+  levels, DELTA_BINARY_PACKED, DELTA_LENGTH_BYTE_ARRAY, DELTA_BYTE_ARRAY,
   BYTE_STREAM_SPLIT.
-- **Data pages v1 and v2**, dictionary pages, statistics metadata.
-- **Nested data**: LIST, STRUCT and MAP (common shapes; see limitations).
-- **Typed columnar API** plus a row view; zero-copy `Bytes` for binary values.
-- **I/O abstraction**: `ParquetSource` / `SyncParquetSource`; no coupling to
-  `File`.
+- **Write encodings**: PLAIN, dictionary (BYTE_ARRAY/FLBA) with automatic
+  fallback, RLE levels, dictionary-index hybrid.
+- **Data pages v1/v2**, dictionary pages, chunk/page statistics, multiple row
+  groups.
+- **Nested data**: LIST, STRUCT and MAP in both directions (common shapes; see
+  limitations).
+- **Writer API**: `ParquetWriterOptions`, streaming `ParquetWriter.add`,
+  `writeParquetTable`, flat `ParquetSchemaBuilder`, memory/file/OPFS output.
+- **Reader API**: typed columns + row view, zero-copy binary values, top-level
+  and dotted-path nested projection, statistics row-group filter, per-row-group
+  streaming, OffsetIndex/ColumnIndex read access.
+- **Parallel reads**: async `readTable` uses up to 8 isolates (`parallelism:
+  auto|1|N`) for in-memory multi-row-group files; sync methods always run on the
+  calling isolate. Web stays single-threaded.
 - **Exact 64-bit handling**: `Int64List` on the VM, two-limb storage on the web,
   with `BigInt` accessors.
 
-## Quick start
+## Quick start (read)
 
 ```dart
 import 'dart:io';
@@ -40,7 +51,6 @@ import 'package:parquet/parquet.dart';
 void main() {
   final reader = ParquetReader.fromBytes(File('data.parquet').readAsBytesSync());
   print('${reader.numRows} rows, ${reader.numRowGroups} row groups');
-  print(reader.schema.columns.map((c) => c.dotPath));
 
   final table = reader.readTableSync();
   final id = table['id'] as Int64Column;
@@ -50,32 +60,93 @@ void main() {
 }
 ```
 
-Projection and row groups:
+Projection, pruning, streaming and parallel reads:
 
 ```dart
-final table = reader.readTableSync(columns: ['id', 'name']);
-final firstGroup = reader.readRowGroupSync(0);
-final row = firstGroup.row(0);
-print(row.toMap());
+final columns = reader.readTableSync(columns: ['id', 'profile.name']);
+final stream = reader.readRowGroups(columns: ['id', 'name']);
+final parallel = await ParquetReader.fromBytes(
+  bytes,
+  options: const ParquetReaderOptions(parallelism: 4),
+).readTable();
+
+final filtered = await reader.readTable(
+  rowGroupFilter: (group) {
+    final stats = group.columnByPath(['id'])?.statistics;
+    // Skip groups whose id column is entirely null.
+    return stats?.nullCount != group.numRows;
+  },
+);
 ```
 
-Asynchronous sources (native file, OPFS, IndexedDB, Blob, HTTP Range):
+Page indexes:
 
 ```dart
-final source = await openSource('data.parquet'); // 'opfs://…' or 'idb://…'
+final chunk = reader.metadata.rowGroup(0).column(0);
+final offsetIndex = chunk.readOffsetIndex(source);
+final columnIndex = chunk.readColumnIndex(source);
+```
+
+## Quick start (write)
+
+```dart
+final table = reader.readTableSync();
+final bytes = writeParquetTable(
+  table,
+  options: const ParquetWriterOptions(
+    compression: CompressionType.zstd,
+    dataPageVersion: 2,
+  ),
+);
+File('out.parquet').writeAsBytesSync(bytes);
+
+// Streaming row groups (each add() = one row group)
+final writer = ParquetWriter(
+  schema: table.schema,
+  options: const ParquetWriterOptions(compression: CompressionType.snappy),
+);
+writer.add(table);
+final encoded = writer.finish();
+```
+
+Native file / Web OPFS output:
+
+```dart
+await writeParquetTableToFile(
+  table,
+  'out.parquet',
+  options: const ParquetWriterOptions(compression: CompressionType.zstd),
+);
+
+// Web: the conditional export uses blit OPFS instead of dart:io.
+await writeParquetTableToFile(table, 'dir/out.parquet');
+```
+
+Create a flat schema when you do not have an existing file:
+
+```dart
+final schema = (ParquetSchemaBuilder()
+      ..addInt64('id', nullable: false)
+      ..addBinary('name', utf8: true)
+      ..addFloat64('score'))
+    .build();
+```
+
+## Quick start (async sources / Web)
+
+```dart
+final source = await openSource('data.parquet'); // 'opfs://...' or 'idb://...'
 final reader = await ParquetReader.open(source);
 final table = await reader.readTable();
 await source.close();
 ```
 
-Web:
+Web Blob/File and IndexedDB:
 
 ```dart
-// Blob/File: blit's read-only backend caches small blobs and slices larger ones.
-final source = await openBlobSource(blob); // a JS Blob or File
+final source = await openBlobSource(blob); // JS Blob or File
 final reader = await ParquetReader.open(source);
 
-// IndexedDB: explicit fallback when OPFS sync handles are unavailable.
 final idb = await openSource('idb://data.parquet');
 ```
 
@@ -85,34 +156,42 @@ A `Uint8List` can always be read synchronously without any Web storage API:
 final reader = ParquetReader.fromBytes(bytes);
 ```
 
-## Supported Parquet features (v0.1.0)
+## Supported Parquet features (v0.1.1)
 
 | Feature | Status |
 |---|---|
-| Physical types (BOOLEAN, INT32, INT64, INT96, FLOAT, DOUBLE, BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY) | yes |
-| Logical types (string, decimal, date/time/timestamp, int/uint, enum, json, bson, uuid, float16, list/map) | yes |
-| Data page v1/v2, dictionary pages | yes |
-| Compression: uncompressed, Snappy, Gzip, LZO, Brotli, Zstd, LZ4_RAW | yes |
+| Physical types (BOOLEAN, INT32, INT64, INT96, FLOAT, DOUBLE, BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY) | read + write |
+| Logical types (string, decimal, date/time/timestamp, int/uint, enum, json, bson, uuid, float16, list/map) | read + write |
+| Data page v1/v2, dictionary pages | read + write |
+| Compression: uncompressed, Snappy, Gzip, LZO, Brotli, Zstd, LZ4_RAW | read + write |
 | Legacy LZ4 (Hadoop framing) | read |
-| Encodings listed above | yes |
-| Flat schemas | yes |
-| LIST of leaf or struct; STRUCT; MAP leaf→leaf | yes |
-| Nested projection | no (top-level projection only) |
-| Writing | no (v0.1.1) |
-| Page index, bloom filters, row-group statistics pruning | no (v0.1.1/v0.1.2) |
+| Encodings listed above | read; PLAIN + dictionary write |
+| Flat schemas | read + write |
+| LIST of leaf or struct; STRUCT; MAP leaf→leaf | read + write |
+| Nested projection (dotted paths) | read |
+| Statistics row-group pruning | read (`rowGroupFilter`) |
+| OffsetIndex / ColumnIndex read | read |
+| Async per-row-group streaming | read |
+| Automatic isolate reads (`parallelism: auto`) | read, VM only |
+| Multiple row groups | read + write |
 | Encryption, geospatial, Variant, ALP, CDC | no (post-1.0) |
+| Page index/bloom/CRC write, predicate API | v0.1.2 |
 
 ### Known limitations
 
-- Deeper nesting shapes (list of list, map inside list, struct containing a list)
-  are reported as `ParquetUnsupportedException` in v0.1.0.
-- LZO is a legacy/deprecated Parquet codec; both Hadoop `BlockCompressorStream`
-  framing and raw LZO1X blocks are read.
-- Encrypted footers (`PARE`) are rejected.
-- `maxRows` truncation works for flat columns; nested truncation lands in v0.1.1.
-- Isolate parallelism is planned for v0.1.1; v0.1.0 is single-isolate.
+- Deeper nesting shapes (list of list, map inside list, list/map inside a
+  struct) are rejected by the reader and writer in v0.1.1.
+- Bare repeated leaf/group fields are not supported; use the LIST annotation.
+- Writer dictionary encoding is used for BYTE_ARRAY/FLBA; numeric columns are
+  written PLAIN.
+- `maxRows` truncation works for flat columns; nested truncation is v0.1.2.
+- Parallel reads are `Isolate.run` per row group on VM memory sources; the
+  long-lived pool, writer-side parallel encode and Web Workers are v0.1.2.
 - Web Blob sources are read-only; IndexedDB is an explicit async fallback
   (`idb://`), not a replacement for OPFS on every browser.
+- LZO is a legacy/deprecated Parquet codec; both Hadoop
+  `BlockCompressorStream` framing and raw LZO1X blocks are read.
+- Encrypted footers (`PARE`) are rejected.
 
 ## I/O
 
@@ -134,6 +213,30 @@ Adapters live in `lib/src/io/`:
 - `HttpRangeSource` (callback-based; bring your own HTTP client)
 - `openSource` / `openSourceSync` with `file://`, `opfs://` and `idb://` support
 
+Writer sinks (`lib/src/writer/file_output*.dart`):
+
+- `writeParquetTableToBytesFile(table, BytesFile)` (native/OPFS/IDB handles)
+- `writeParquetTableToFile(table, path)` (native `dart:io` or Web OPFS)
+
+## Benchmarks
+
+The chart above is produced in CI by
+[`benchmark_test`](https://pub.dev/packages/benchmark_test) and
+[`benchcat`](https://github.com/unk-404/benchcat), and compares:
+
+- Dart VM JIT
+- Dart VM AOT
+- Rust with the arrow-rs `parquet` crate
+
+Both sides run the same fixtures and the same operations: flat full scans for
+Snappy/Zstd/Brotli/LZ4_RAW, i64 projection, nested list/struct, metadata-only
+parse, four-isolate/four-thread variants, and flat/nested writes across codecs
+and page versions. The Rust harness lives in [`benchmark/rust`](benchmark/rust)
+and is pinned to `parquet = "=60.0.0"`.
+
+Benchmark fixtures are committed under `benchmark/fixtures/`; raw JSONL is
+uploaded as a CI artifact, and only the rendered SVG is committed.
+
 ## Dependencies
 
 - [blit](https://pub.dev/packages/blit) — zero-copy `Bytes`, OPFS, Blob and IndexedDB `BytesFile` backends
@@ -151,13 +254,12 @@ Local development runs Windows VM tests only:
 ```sh
 dart analyze
 dart format --set-exit-if-changed .
-dart test
+dart test -j 4
 ```
 
-Linux/macOS, Chrome and Wasm tests run in GitHub Actions. Benchmarks are built
-with [`benchmark_test`](https://pub.dev/packages/benchmark_test) and rendered by
-[`benchcat`](https://github.com/unk-404/benchcat) in CI; the chart above is
-committed to `assets/benchmarks.svg`.
+Linux/macOS, Chrome and Wasm tests run in GitHub Actions. Benchmarks build the
+Rust counterpart with `cargo build --release --locked` and run it after the Dart
+JIT/AOT suites.
 
 ## License
 

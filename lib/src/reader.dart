@@ -7,21 +7,43 @@ import 'column/page_reader.dart';
 import 'format/footer.dart';
 import 'io/source.dart';
 import 'metadata/metadata.dart';
+import 'parallel/isolate_runner.dart';
+import 'schema/projection.dart';
 import 'table/column.dart';
 import 'table/nested_assembler.dart';
 import 'table/table.dart';
 import 'table/table_concat.dart';
 import 'util/errors.dart';
 
+/// Predicate over row-group metadata used for statistics pruning.
+typedef RowGroupFilter = bool Function(RowGroupMetaData rowGroup);
+
 /// Options for opening/reading.
 final class ParquetReaderOptions {
-  const ParquetReaderOptions({this.columns, this.maxRows});
+  const ParquetReaderOptions({
+    this.columns,
+    this.maxRows,
+    this.rowGroupFilter,
+    this.parallelism,
+  });
 
   /// Top-level column projection; null means all columns.
   final List<String>? columns;
 
   /// Optional row limit for [ParquetReader.readTable].
   final int? maxRows;
+
+  /// Optional row-group pruning callback. Returning `false` skips the group
+  /// before any page or column chunk is read.
+  final RowGroupFilter? rowGroupFilter;
+
+  /// Isolate workers for async memory-source reads.
+  ///
+  /// `null` selects `auto` on the VM (up to 8 workers, only for multi-row-group
+  /// buffers >= 1 MiB), `1` forces the current isolate, and `N > 1` uses up to
+  /// N workers. Web always stays on the current event loop. Sync methods never
+  /// use isolates.
+  final int? parallelism;
 }
 
 /// Read-only Parquet reader.
@@ -29,14 +51,20 @@ final class ParquetReaderOptions {
 /// Use [fromBytes] for a synchronous in-memory reader, or [open] for a
 /// [ParquetSource] (native file, OPFS, Blob, HTTP Range).
 final class ParquetReader {
-  ParquetReader._(this.metadata, this._sync, this._async, this.options)
-    : schema = metadata.schema;
+  ParquetReader._(
+    this.metadata,
+    this._sync,
+    this._async,
+    this.options, {
+    this._bytes,
+  }) : schema = metadata.schema;
 
   final ParquetMetadata metadata;
   final ParquetSchema schema;
   final SyncParquetSource? _sync;
   final ParquetSource? _async;
   final ParquetReaderOptions options;
+  final Uint8List? _bytes;
 
   int get numRowGroups => metadata.numRowGroups;
   int get numRows => metadata.numRows;
@@ -51,7 +79,7 @@ final class ParquetReader {
     final source = MemorySource.fromUint8List(bytes);
     final footer = _readFooterSync(source);
     final metadata = ParquetMetadata.fromFileMetaData(footer.fileMetadata);
-    return ParquetReader._(metadata, source, null, options);
+    return ParquetReader._(metadata, source, null, options, bytes: bytes);
   }
 
   /// Opens an asynchronous source (file, OPFS, Blob, HTTP Range).
@@ -81,21 +109,16 @@ final class ParquetReader {
       );
     }
     final rowGroup = metadata.rowGroup(index);
-    final nodes = _selectNodes(columns ?? options.columns);
+    final projection = projectSchema(schema, columns ?? options.columns);
     final leaves = <int, DecodedColumnChunk>{};
-    for (final node in nodes) {
-      for (final leaf in _leavesOf(node)) {
-        final descriptor = schema.column(leaf.leafIndex!);
-        final chunk = rowGroup.column(descriptor.leafIndex);
-        leaves[leaf.leafIndex!] = ColumnChunkReader(
-          chunk,
-          descriptor,
-        ).readSync(source);
-      }
+    for (var i = 0; i < projection.sourceColumns.length; i++) {
+      final descriptor = projection.sourceColumns[i];
+      final chunk = rowGroup.column(descriptor.leafIndex);
+      leaves[i] = ColumnChunkReader(chunk, descriptor).readSync(source);
     }
     final out = <ParquetColumn>[
-      for (final node in nodes)
-        buildNodeColumn(node, schema, leaves, rowGroup.numRows),
+      for (final node in projection.schema.root.children)
+        buildNodeColumn(node, projection.schema, leaves, rowGroup.numRows),
     ];
     var rows = rowGroup.numRows;
     if (maxRows != null && maxRows < rows) {
@@ -104,7 +127,7 @@ final class ParquetReader {
         out[i] = sliceColumn(out[i], rows);
       }
     }
-    return ParquetTable(schema: schema, columns: out, numRows: rows);
+    return ParquetTable(schema: projection.schema, columns: out, numRows: rows);
   }
 
   /// Reads one row group asynchronously.
@@ -115,21 +138,16 @@ final class ParquetReader {
   }) async {
     final rowGroup = metadata.rowGroup(index);
     final source = _async ?? SyncSourceAdapter(_sync!);
-    final nodes = _selectNodes(columns ?? options.columns);
+    final projection = projectSchema(schema, columns ?? options.columns);
     final leaves = <int, DecodedColumnChunk>{};
-    for (final node in nodes) {
-      for (final leaf in _leavesOf(node)) {
-        final descriptor = schema.column(leaf.leafIndex!);
-        final chunk = rowGroup.column(descriptor.leafIndex);
-        leaves[leaf.leafIndex!] = await ColumnChunkReader(
-          chunk,
-          descriptor,
-        ).read(source);
-      }
+    for (var i = 0; i < projection.sourceColumns.length; i++) {
+      final descriptor = projection.sourceColumns[i];
+      final chunk = rowGroup.column(descriptor.leafIndex);
+      leaves[i] = await ColumnChunkReader(chunk, descriptor).read(source);
     }
     final out = <ParquetColumn>[
-      for (final node in nodes)
-        buildNodeColumn(node, schema, leaves, rowGroup.numRows),
+      for (final node in projection.schema.root.children)
+        buildNodeColumn(node, projection.schema, leaves, rowGroup.numRows),
     ];
     var rows = rowGroup.numRows;
     if (maxRows != null && maxRows < rows) {
@@ -138,21 +156,32 @@ final class ParquetReader {
         out[i] = sliceColumn(out[i], rows);
       }
     }
-    return ParquetTable(schema: schema, columns: out, numRows: rows);
+    return ParquetTable(schema: projection.schema, columns: out, numRows: rows);
   }
 
   /// Reads all row groups synchronously and concatenates their columns.
-  ParquetTable readTableSync({List<String>? columns, int? maxRows}) {
+  ///
+  /// [rowGroupFilter] is applied before any column chunk is read; returning
+  /// `false` skips the group entirely.
+  ParquetTable readTableSync({
+    List<String>? columns,
+    int? maxRows,
+    RowGroupFilter? rowGroupFilter,
+  }) {
     final source = _sync;
     if (source == null) {
       throw ParquetUnsupportedException(
         'this reader was opened from an asynchronous source; use readTable()',
       );
     }
+    final filter = rowGroupFilter ?? options.rowGroupFilter;
+    final projection = projectSchema(schema, columns ?? options.columns);
     final tables = <ParquetTable>[];
     var remaining = maxRows ?? options.maxRows;
     for (var i = 0; i < numRowGroups; i++) {
       if (remaining != null && remaining <= 0) break;
+      final group = metadata.rowGroup(i);
+      if (filter != null && !filter(group)) continue;
       final table = readRowGroupSync(
         i,
         columns: columns ?? options.columns,
@@ -161,15 +190,47 @@ final class ParquetReader {
       tables.add(table);
       if (remaining != null) remaining -= table.numRows;
     }
-    return concatTables(schema, tables);
+    return concatTables(projection.schema, tables);
   }
 
   /// Reads all row groups asynchronously and concatenates their columns.
-  Future<ParquetTable> readTable({List<String>? columns, int? maxRows}) async {
+  Future<ParquetTable> readTable({
+    List<String>? columns,
+    int? maxRows,
+    RowGroupFilter? rowGroupFilter,
+  }) async {
+    final filter = rowGroupFilter ?? options.rowGroupFilter;
+    final projection = projectSchema(schema, columns ?? options.columns);
+    final totalLimit = maxRows ?? options.maxRows;
+    final bytes = _bytes;
+    final requested = options.parallelism;
+    if (bytes != null &&
+        totalLimit == null &&
+        (requested == null || requested != 1) &&
+        numRowGroups > 1 &&
+        bytes.length >= (1 << 20)) {
+      final indices = <int>[
+        for (var i = 0; i < numRowGroups; i++)
+          if (filter == null || filter(metadata.rowGroup(i))) i,
+      ];
+      final auto = requested ?? defaultParquetParallelism;
+      final workers = auto <= 0 ? defaultParquetParallelism : auto;
+      if (indices.length > 1 && workers > 1) {
+        return _readTableParallel(
+          bytes,
+          indices,
+          columns ?? options.columns,
+          projection.schema,
+          workers < indices.length ? workers : indices.length,
+        );
+      }
+    }
     final tables = <ParquetTable>[];
-    var remaining = maxRows ?? options.maxRows;
+    var remaining = totalLimit;
     for (var i = 0; i < numRowGroups; i++) {
       if (remaining != null && remaining <= 0) break;
+      final group = metadata.rowGroup(i);
+      if (filter != null && !filter(group)) continue;
       final table = await readRowGroup(
         i,
         columns: columns ?? options.columns,
@@ -178,31 +239,59 @@ final class ParquetReader {
       tables.add(table);
       if (remaining != null) remaining -= table.numRows;
     }
-    return concatTables(schema, tables);
+    return concatTables(projection.schema, tables);
   }
 
-  List<SchemaNode> _selectNodes(List<String>? names) {
-    final nodes = schema.root.children;
-    if (names == null || names.isEmpty) return nodes;
-    final byName = {for (final node in nodes) node.name: node};
-    final out = <SchemaNode>[];
-    for (final name in names) {
-      final node = byName[name];
-      if (node == null) {
-        throw ParquetFormatException('no such column: $name');
-      }
-      out.add(node);
+  Future<ParquetTable> _readTableParallel(
+    Uint8List bytes,
+    List<int> indices,
+    List<String>? columns,
+    ParquetSchema projectionSchema,
+    int workers,
+  ) async {
+    final tables = <ParquetTable>[];
+    for (var start = 0; start < indices.length; start += workers) {
+      final end = start + workers < indices.length
+          ? start + workers
+          : indices.length;
+      final batch = await Future.wait([
+        for (var i = start; i < end; i++)
+          runParquetIsolate(() {
+            final reader = ParquetReader.fromBytes(
+              bytes,
+              options: ParquetReaderOptions(columns: columns, parallelism: 1),
+            );
+            return reader.readRowGroupSync(indices[i]);
+          }),
+      ]);
+      tables.addAll(batch);
     }
-    return out;
+    return concatTables(projectionSchema, tables);
   }
 
-  Iterable<SchemaNode> _leavesOf(SchemaNode node) sync* {
-    if (node.isLeaf) {
-      yield node;
-      return;
-    }
-    for (final child in node.children) {
-      yield* _leavesOf(child);
+  /// Streams one table per row group, bounding peak memory to one row group.
+  ///
+  /// The returned stream is lazy. Each table has the same columns and schema
+  /// as [readTable]. [rowGroupFilter] can skip whole groups using statistics
+  /// before their pages are fetched.
+  Stream<ParquetTable> readRowGroups({
+    List<String>? columns,
+    int? maxRows,
+    RowGroupFilter? rowGroupFilter,
+  }) async* {
+    final filter = rowGroupFilter ?? options.rowGroupFilter;
+    var remaining = maxRows ?? options.maxRows;
+    for (var i = 0; i < numRowGroups; i++) {
+      if (remaining != null && remaining <= 0) break;
+      final group = metadata.rowGroup(i);
+      if (filter != null && !filter(group)) continue;
+      final table = await readRowGroup(
+        i,
+        columns: columns ?? options.columns,
+        maxRows: remaining,
+      );
+      if (remaining != null) remaining -= table.numRows;
+      yield table;
     }
   }
 

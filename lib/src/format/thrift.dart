@@ -247,6 +247,30 @@ final class ThriftCompactReader {
 }
 
 /// A list with an explicit Thrift element type, for [ThriftCompactWriter].
+/// Explicit Thrift `i16` field wrapper for the compact writer.
+final class ThriftI16 {
+  const ThriftI16(this.value);
+  final int value;
+}
+
+/// Explicit Thrift `i32` field wrapper for the compact writer.
+final class ThriftI32 {
+  const ThriftI32(this.value);
+  final int value;
+}
+
+/// Explicit Thrift `i64` field wrapper for the compact writer.
+final class ThriftI64 {
+  const ThriftI64(this.value);
+  final int value;
+}
+
+/// Explicit Thrift `byte` field wrapper for the compact writer.
+final class ThriftByte {
+  const ThriftByte(this.value);
+  final int value;
+}
+
 final class TList {
   /// Creates a list value encoded with [elementType] (a [TCompactType]).
   const TList(this.elementType, this.values);
@@ -314,6 +338,10 @@ final class ThriftCompactWriter {
     if (value is bool) {
       return value ? TCompactType.boolTrue : TCompactType.boolFalse;
     }
+    if (value is ThriftByte) return TCompactType.byte;
+    if (value is ThriftI16) return TCompactType.i16;
+    if (value is ThriftI32) return TCompactType.i32;
+    if (value is ThriftI64) return TCompactType.i64;
     if (value is int) return TCompactType.i64;
     if (value is double) return TCompactType.doubleValue;
     if (value is Uint8List || value is String || value is Bytes) {
@@ -332,12 +360,12 @@ final class ThriftCompactWriter {
       case TCompactType.boolFalse:
         return; // value encoded in the field header
       case TCompactType.byte:
-        _out.writeUint8((value as int) & 0xFF);
+        _out.writeUint8(_intValue(value) & 0xFF);
       case TCompactType.i16:
       case TCompactType.i32:
-        _out.writeZigZag32(value as int);
+        _out.writeZigZag32(_intValue(value));
       case TCompactType.i64:
-        _writeZigZag64(value as int);
+        _writeZigZag64(_intValue(value));
       case TCompactType.doubleValue:
         final data = ByteData(8)..setFloat64(0, value as double, Endian.little);
         for (var i = 0; i < 8; i++) {
@@ -356,6 +384,15 @@ final class ThriftCompactWriter {
         throw ArgumentError.value(type, 'type', 'unsupported Thrift type');
     }
   }
+
+  static int _intValue(Object value) => switch (value) {
+    ThriftByte(:final value) => value,
+    ThriftI16(:final value) => value,
+    ThriftI32(:final value) => value,
+    ThriftI64(:final value) => value,
+    int value => value,
+    _ => throw ArgumentError.value(value, 'value', 'expected an integer'),
+  };
 
   void _writeZigZag64(int value) {
     // Zigzag: non-negative 2n, negative -2n-1. Implemented locally because

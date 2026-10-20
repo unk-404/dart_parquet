@@ -1,0 +1,27 @@
+[package]
+name = "parquet-bench"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+description = "arrow-rs counterpart benchmarks for benchmark/parquet_bench_test.dart"
+
+# Standalone crate: not part of a workspace at the repository root.
+[workspace]
+
+[dependencies]
+# Pinned: keep Dart-vs-Rust comparison reproducible. Bump both together.
+parquet = { version = "=60.0.0", default-features = true }
+arrow-array = "=60.0.0"
+arrow-data = "=60.0.0"
+bytes = "=1.12.1"
+serde_json = "=1.0.154"
+
+# Default-features of parquet 60 already enable the codecs used by the fixtures:
+# arrow (RecordBatch reader), snap (snappy), zstd, brotli, lz4/lz4_flex, flate2.
+
+[profile.release]
+debug = false
+lto = "thin"
+codegen-units = 1
+panic = "abort"

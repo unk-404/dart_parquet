@@ -1,6 +1,6 @@
 name: parquet
-description: Pure Dart Apache Parquet reader with VM and Web support.
-version: 0.1.0
+description: Pure Dart Apache Parquet reader and writer with VM and Web support.
+version: 0.1.1
 repository: https://github.com/unk-404/dart_parquet
 issue_tracker: https://github.com/unk-404/dart_parquet/issues
 

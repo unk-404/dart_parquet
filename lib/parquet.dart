@@ -28,5 +28,6 @@ export 'src/reader.dart';
 export 'src/schema/schema.dart';
 export 'src/table/column.dart';
 export 'src/table/table.dart';
+export 'src/writer/writer.dart';
 export 'src/util/bytes.dart' show Bytes, Uint64;
 export 'src/util/errors.dart';
