@@ -24,43 +24,43 @@ color = "#8CB8F0"
 [[row]]
 id = "read read.flat.snappy"
 label = "Flat read · Snappy"
-value = "value * 3.6983"
-unit = "MiB/s"
+value = "value * 3877970"
+unit = "B/s"
 group = "Read"
 
 [[row]]
 id = "read read.flat.zstd"
 label = "Flat read · Zstd"
-value = "value * 3.6983"
-unit = "MiB/s"
+value = "value * 3877970"
+unit = "B/s"
 group = "Read"
 
 [[row]]
 id = "read read.flat.brotli"
 label = "Flat read · Brotli"
-value = "value * 3.6983"
-unit = "MiB/s"
+value = "value * 3877970"
+unit = "B/s"
 group = "Read"
 
 [[row]]
 id = "read read.flat.lz4"
 label = "Flat read · LZ4_RAW"
-value = "value * 3.6983"
-unit = "MiB/s"
+value = "value * 3877970"
+unit = "B/s"
 group = "Read"
 
 [[row]]
 id = "read read.flat.snappy.projection.i64"
 label = "Projection · i64"
-value = "value * 0.76294"
-unit = "MiB/s"
+value = "value * 800000"
+unit = "B/s"
 group = "Read"
 
 [[row]]
 id = "read read.nested.snappy"
 label = "Nested read · Snappy"
-value = "value * 0.69704"
-unit = "MiB/s"
+value = "value * 730900"
+unit = "B/s"
 group = "Read"
 
 [[row]]
