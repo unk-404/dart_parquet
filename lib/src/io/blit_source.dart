@@ -11,6 +11,7 @@ import 'dart:typed_data';
 import 'package:blit/blit.dart' show Bytes, BytesFile, openBytesFile;
 
 import '../util/errors.dart';
+import 'blit_web.dart';
 import 'source.dart';
 
 /// Asynchronous [ParquetSource] over a blit [BytesFile].
@@ -27,6 +28,39 @@ final class BlitSource implements ParquetSource {
     bool readOnly = true,
   }) async =>
       BlitSource(await openBytesFile(path, create: create, readOnly: readOnly));
+
+  /// Opens a read-only blit [BytesFile] over a JavaScript `Blob`/`File`.
+  ///
+  /// Requires blit >= 0.1.6; only available on the web. Small blobs are cached
+  /// in memory once, larger ones use `Blob.slice()` per read.
+  static Future<BlitSource> openBlob(
+    Object blob, {
+    int cacheLimit = 8 << 20,
+  }) async =>
+      BlitSource(await openBlobBytesFileWeb(blob, cacheLimit: cacheLimit));
+
+  /// Opens a blit IndexedDB-backed [BytesFile].
+  ///
+  /// Requires blit >= 0.1.6; only available on the web. IndexedDB is an
+  /// explicit fallback for contexts where OPFS sync handles are unavailable.
+  /// Readers normally want [create] `false` and [readOnly] `true`.
+  static Future<BlitSource> openIndexedDb(
+    String path, {
+    bool create = false,
+    bool readOnly = true,
+    int chunkSize = 64 * 1024,
+    String? databaseName,
+    String? storeName,
+  }) async => BlitSource(
+    await openIdbBytesFileWeb(
+      path,
+      create: create,
+      readOnly: readOnly,
+      chunkSize: chunkSize,
+      databaseName: databaseName,
+      storeName: storeName,
+    ),
+  );
 
   /// The underlying file handle, exposed for callers that need its extras
   /// (e.g. `SyncBytesFile` on native).
@@ -71,3 +105,20 @@ Future<ParquetSource> openBlitSource(
   bool create = false,
   bool readOnly = true,
 }) => BlitSource.open(path, create: create, readOnly: readOnly);
+
+/// Opens a web IndexedDB-backed Parquet source (blit >= 0.1.6).
+Future<ParquetSource> openIdbBlitSource(
+  String path, {
+  bool create = false,
+  bool readOnly = true,
+  int chunkSize = 64 * 1024,
+  String? databaseName,
+  String? storeName,
+}) => BlitSource.openIndexedDb(
+  path,
+  create: create,
+  readOnly: readOnly,
+  chunkSize: chunkSize,
+  databaseName: databaseName,
+  storeName: storeName,
+);

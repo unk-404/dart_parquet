@@ -4,6 +4,7 @@
 /// Supported locations:
 ///
 ///  * `opfs://dir/file.parquet` — blit's Web OPFS backend (async only);
+///  * `idb://dir/file.parquet` — blit's Web IndexedDB backend (async only);
 ///  * `file:///C:/dir/file.parquet` — native filesystem URI;
 ///  * anything else — a native filesystem path (VM only).
 ///
@@ -18,6 +19,7 @@ import 'file_source.dart';
 import 'source.dart';
 
 const String _opfsPrefix = 'opfs://';
+const String _idbPrefix = 'idb://';
 
 /// Whether this platform has direct filesystem paths (`dart:io`).
 bool get nativeFileSourcesSupported => fileSourcesSupported;
@@ -28,6 +30,9 @@ bool get nativeFileSourcesSupported => fileSourcesSupported;
 Future<ParquetSource> openSource(String location) async {
   if (location.startsWith(_opfsPrefix)) {
     return openBlitSource(location.substring(_opfsPrefix.length));
+  }
+  if (location.startsWith(_idbPrefix)) {
+    return openIdbBlitSource(location.substring(_idbPrefix.length));
   }
   if (location.startsWith('http://') || location.startsWith('https://')) {
     throw ParquetUnsupportedException(
@@ -49,6 +54,11 @@ SyncParquetSource openSourceSync(String location) {
   if (location.startsWith(_opfsPrefix)) {
     throw ParquetUnsupportedException(
       'OPFS locations are asynchronous only; use openSource for $location',
+    );
+  }
+  if (location.startsWith(_idbPrefix)) {
+    throw ParquetUnsupportedException(
+      'IndexedDB locations are asynchronous only; use openSource for $location',
     );
   }
   if (location.startsWith('http://') || location.startsWith('https://')) {

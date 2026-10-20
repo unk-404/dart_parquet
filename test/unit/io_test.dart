@@ -318,5 +318,16 @@ void main() {
         throwsA(isA<ParquetUnsupportedException>()),
       );
     });
+
+    test('explains that IndexedDB is web-only and async', () async {
+      await expectLater(
+        openSource('idb://data/file.parquet'),
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => openSourceSync('idb://data/file.parquet'),
+        throwsA(isA<ParquetUnsupportedException>()),
+      );
+    });
   });
 }

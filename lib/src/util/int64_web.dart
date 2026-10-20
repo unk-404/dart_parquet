@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 const int _mask32 = 0xFFFFFFFF;
-const double _two32 = 4294967296.0;
 const int _maxExact = 0x1FFFFFFFFFFFFF; // 2^53 - 1
+const int _two32 = 0x100000000;
 
 /// Exact 64-bit buffer stored as two 32-bit limbs (dart2js).
 final class Int64Buffer {
@@ -16,17 +16,33 @@ final class Int64Buffer {
   Int64List? get int64List => null;
 
   int getInt(int index) {
-    final value = _hi[index] * _two32 + _lo[index];
-    final signed = (_hi[index] & 0x80000000) != 0
-        ? value - _two32 * _two32
-        : value;
-    if (signed > _maxExact || signed < -_maxExact) {
-      throw StateError(
-        'int64 value at $index is not exactly representable on the web; '
-        'use getBigInt()',
-      );
+    final hi = _hi[index];
+    final lo = _lo[index];
+    if ((hi & 0x80000000) == 0) {
+      if (hi > 0x1FFFFF) {
+        _throwNotExact(index);
+      }
+      return hi * _two32 + lo;
     }
-    return signed.toInt();
+    // Negative values: compute the magnitude from the two's complement.
+    // Subtracting from 2^64 in doubles rounds to zero for values such as -2.
+    final nhi = (~hi) & _mask32;
+    final nlo = (~lo) & _mask32;
+    if (nhi > 0x1FFFFF) {
+      _throwNotExact(index);
+    }
+    final magnitude = nhi * _two32 + nlo + 1;
+    if (magnitude > _maxExact) {
+      _throwNotExact(index);
+    }
+    return -magnitude;
+  }
+
+  Never _throwNotExact(int index) {
+    throw StateError(
+      'int64 value at $index is not exactly representable on the web; '
+      'use getBigInt()',
+    );
   }
 
   BigInt getBigInt(int index) {

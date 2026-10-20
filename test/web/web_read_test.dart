@@ -2,7 +2,10 @@
 library;
 
 import 'dart:convert';
+import 'dart:js_interop';
 
+// ignore: implementation_imports
+import 'package:blit/src/io/web/js.dart' show JsBlob;
 import 'package:parquet/parquet.dart';
 import 'package:test/test.dart';
 
@@ -45,5 +48,61 @@ void main() {
     expect(st.getStruct(1), {'a': 1, 'b': 'x'});
     expect(st.getStruct(2), {'a': 2, 'b': 'y'});
     expect(st.getStruct(3), {'a': 3, 'b': null});
+  });
+
+  test('web: blit Blob backend (read-only)', () async {
+    final bytes = base64Decode(_fixtureBase64);
+    final blob = JsBlob([bytes.toJS].toJS);
+    final source = await openBlobSource(blob);
+    try {
+      final reader = await ParquetReader.open(source);
+      final table = await reader.readTable();
+      expect(table.numRows, 4);
+      expect((table['i64'] as Int64Column).getInt(2), -2);
+      expect((table['s'] as BinaryColumn).getString(1), 'beta');
+    } finally {
+      await source.close();
+    }
+  });
+
+  test('web: blit IndexedDB backend', () async {
+    final bytes = base64Decode(_fixtureBase64);
+    final path = 'parquet-web-test-${DateTime.now().microsecondsSinceEpoch}';
+    addTearDown(() async {
+      try {
+        final cleanup = await BlitSource.openIndexedDb(
+          path,
+          create: false,
+          readOnly: false,
+        );
+        await cleanup.file.delete();
+        await cleanup.close();
+      } catch (_) {
+        // Best-effort cleanup; the test already failed for a real reason.
+      }
+    });
+
+    final writer = await BlitSource.openIndexedDb(
+      path,
+      create: true,
+      readOnly: false,
+    );
+    try {
+      await writer.file.writeAt(0, bytes);
+      await writer.file.flush();
+    } finally {
+      await writer.close();
+    }
+
+    final source = await openSource('idb://$path');
+    try {
+      final reader = await ParquetReader.open(source);
+      final table = await reader.readTable();
+      expect(table.numRows, 4);
+      expect((table['i64'] as Int64Column).getInt(2), -2);
+      expect((table['lst'] as ListColumn).getList(2), [0, 1]);
+    } finally {
+      await source.close();
+    }
   });
 }

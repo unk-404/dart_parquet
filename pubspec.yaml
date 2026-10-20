@@ -14,7 +14,7 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
-  blit: ^0.1.4
+  blit: ^0.1.6
   snappy_neo: ^0.1.2
   zstd_neo: ^0.1.2
   brotli_neo: ^0.1.2

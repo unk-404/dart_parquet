@@ -6,7 +6,7 @@ Pure Dart Apache Parquet reader with VM and Web support.
 
 `parquet` reads Parquet files without native libraries or FFI. It runs on the
 Dart VM, dart2js and dart2wasm, and works with in-memory bytes, native files,
-blit OPFS files, browser `Blob`/`File` slices, and HTTP Range readers.
+blit OPFS/IndexedDB files, browser `Blob`/`File` slices, and HTTP Range readers.
 
 > **Status: v0.1.0 — usable read-only release.**
 > Writing, async streaming, page-index/bloom filters and isolate parallelism are
@@ -59,10 +59,10 @@ final row = firstGroup.row(0);
 print(row.toMap());
 ```
 
-Asynchronous sources (native file, OPFS, Blob, HTTP Range):
+Asynchronous sources (native file, OPFS, IndexedDB, Blob, HTTP Range):
 
 ```dart
-final source = await openSource('data.parquet'); // or 'opfs://data.parquet'
+final source = await openSource('data.parquet'); // 'opfs://…' or 'idb://…'
 final reader = await ParquetReader.open(source);
 final table = await reader.readTable();
 await source.close();
@@ -71,7 +71,17 @@ await source.close();
 Web:
 
 ```dart
-final bytes = await fetchParquetBytes(); // your Blob/fetch code
+// Blob/File: blit's read-only backend caches small blobs and slices larger ones.
+final source = await openBlobSource(blob); // a JS Blob or File
+final reader = await ParquetReader.open(source);
+
+// IndexedDB: explicit fallback when OPFS sync handles are unavailable.
+final idb = await openSource('idb://data.parquet');
+```
+
+A `Uint8List` can always be read synchronously without any Web storage API:
+
+```dart
 final reader = ParquetReader.fromBytes(bytes);
 ```
 
@@ -101,6 +111,8 @@ final reader = ParquetReader.fromBytes(bytes);
 - Encrypted footers (`PARE`) are rejected.
 - `maxRows` truncation works for flat columns; nested truncation lands in v0.1.1.
 - Isolate parallelism is planned for v0.1.1; v0.1.0 is single-isolate.
+- Web Blob sources are read-only; IndexedDB is an explicit async fallback
+  (`idb://`), not a replacement for OPFS on every browser.
 
 ## I/O
 
@@ -116,14 +128,15 @@ Adapters live in `lib/src/io/`:
 
 - `MemorySource`
 - native file (sync/async, `dart:io`, VM only)
-- `BlitSource` (blit `BytesFile`: native files and browser OPFS)
-- `BlobSliceSource` / `openBlobSource` (browser Blob/File)
+- `BlitSource` (blit `BytesFile`: native files, browser OPFS, Blob, IndexedDB)
+- `BlobSliceSource` / `openBlobSource` (browser Blob/File via blit 0.1.6)
+- `BlitSource.openIndexedDb` / `openIdbBlitSource` (blit 0.1.6 IDB backend)
 - `HttpRangeSource` (callback-based; bring your own HTTP client)
-- `openSource` / `openSourceSync` with `file://` and `opfs://` support
+- `openSource` / `openSourceSync` with `file://`, `opfs://` and `idb://` support
 
 ## Dependencies
 
-- [blit](https://pub.dev/packages/blit) — zero-copy `Bytes`
+- [blit](https://pub.dev/packages/blit) — zero-copy `Bytes`, OPFS, Blob and IndexedDB `BytesFile` backends
 - [snappy_neo](https://pub.dev/packages/snappy_neo)
 - [zstd_neo](https://pub.dev/packages/zstd_neo)
 - [brotli_neo](https://pub.dev/packages/brotli_neo)

@@ -15,4 +15,9 @@
   handling on the VM and web.
 - I/O abstraction: memory, native file, blit OPFS, Blob/File slices and HTTP
   Range callbacks.
-- Web-safe core; Chrome test for Snappy + int64 + nested reads.
+- Web-safe core; Chrome tests for Snappy + int64 + nested reads, Blob and
+  IndexedDB sources.
+- blit 0.1.6 Web backends: `openBlobBytesFile` for read-only `Blob`/`File`
+  sources and `openIdbBytesFile` for IndexedDB (`idb://`).
+- Fixed dart2js `Int64Buffer.getInt()` for negative values (two's-complement
+  limb arithmetic instead of a double subtraction that rounded `-2` to `0`).
