@@ -62,6 +62,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: 3.13.5
