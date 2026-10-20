@@ -1,0 +1,84 @@
+{
+ "file": "official/datapage_v1-corrupt-checksum.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 5120,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.13.0-SNAPSHOT (build 019361e0da0677360788f0ad96c520fb8c296d7d)"
+ },
+ "leaves": [
+  {
+   "path": "a",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "b",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "Int32Column",
+   "length": 5120,
+   "null_count": 0,
+   "checksum": "a124db5ef2755069",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    5117,
+    5118,
+    5119
+   ],
+   "samples": [
+    "50462976",
+    "117835012",
+    "185207048",
+    "151653132",
+    "84281096",
+    "16909060"
+   ]
+  },
+  {
+   "name": "b",
+   "dart_class": "Int32Column",
+   "length": 5120,
+   "null_count": 0,
+   "checksum": "cd98a69232c4433e",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    5117,
+    5118,
+    5119
+   ],
+   "samples": [
+    "1734763876",
+    "1802135912",
+    "1869507948",
+    "-1819111024",
+    "-1751738988",
+    "-1684366952"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

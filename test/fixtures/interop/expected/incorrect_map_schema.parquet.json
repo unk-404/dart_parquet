@@ -1,0 +1,54 @@
+{
+ "file": "official/incorrect_map_schema.parquet",
+ "kind": "manual",
+ "writer_family": "unknown",
+ "pyarrow": {
+  "ok": false,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": "ArrowInvalid: Map keys must be annotated as required.",
+  "read_error": null
+ },
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.12.2 (build 77e30c8093386ec52c3cfa6c34b7ef3321322c94)"
+ },
+ "leaves": [
+  {
+   "path": "my_map.key_value.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "my_map.key_value.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "my_map",
+   "dart_class": "MapColumn",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "a7f723f87112d001",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "[[\"name\",\"report\"],[\"parent\",\"another\"]]"
+   ]
+  }
+ ]
+}

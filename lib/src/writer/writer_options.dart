@@ -9,6 +9,8 @@ import '../format/enums.dart';
 ///
 /// Defaults mirror the common Parquet writer defaults: uncompressed pages,
 /// dictionary encoding enabled, 1 MiB data pages and format data page v1.
+/// The v0.1.2 features ([writeCrc], [writePageIndex], [writeBloomFilter]) are
+/// off by default so default output keeps the v0.1.1 layout.
 final class ParquetWriterOptions {
   /// Creates writer options.
   const ParquetWriterOptions({
@@ -18,8 +20,13 @@ final class ParquetWriterOptions {
     this.dataPageVersion = 1,
     this.writeStatistics = true,
     this.pageSize = 1024 * 1024,
-    this.createdBy = 'parquet-dart version 0.1.1',
+    this.createdBy = 'parquet-dart version 0.1.2',
     this.keyValueMetadata,
+    this.writeCrc = false,
+    this.writePageIndex = false,
+    this.writeBloomFilter = false,
+    this.bloomFilterFpp = 0.01,
+    this.bloomFilterMaxBytes = 1024 * 1024,
   });
 
   /// Page compression codec.
@@ -49,6 +56,32 @@ final class ParquetWriterOptions {
   /// Optional file-level key/value metadata.
   final Map<String, String>? keyValueMetadata;
 
+  /// Whether `PageHeader.crc` (CRC-32 IEEE of the compressed page body) is
+  /// written for every page.
+  ///
+  /// Defaults to `false`, matching the v0.1.1 output.
+  final bool writeCrc;
+
+  /// Whether the `OffsetIndex` / `ColumnIndex` page index is written after the
+  /// column chunks.
+  ///
+  /// Defaults to `false`.
+  final bool writePageIndex;
+
+  /// Whether a Split Block Bloom Filter is written for every column chunk with
+  /// at least one non-null value.
+  ///
+  /// Defaults to `false`.
+  final bool writeBloomFilter;
+
+  /// Target false-positive probability for Bloom filters.
+  final double bloomFilterFpp;
+
+  /// Upper bound on a Bloom filter's bitset size in bytes.
+  ///
+  /// Must be at least 32; the actual size is rounded down to a power of two.
+  final int bloomFilterMaxBytes;
+
   /// Resolved codec implementation for [compression].
   CompressionCodec get codec => codecFor(compression);
 
@@ -69,6 +102,20 @@ final class ParquetWriterOptions {
         dictionaryPageSizeLimit,
         'dictionaryPageSizeLimit',
         'must not be negative',
+      );
+    }
+    if (!(bloomFilterFpp > 0 && bloomFilterFpp < 1)) {
+      throw ArgumentError.value(
+        bloomFilterFpp,
+        'bloomFilterFpp',
+        'must be between 0 and 1 (exclusive)',
+      );
+    }
+    if (bloomFilterMaxBytes < 32) {
+      throw ArgumentError.value(
+        bloomFilterMaxBytes,
+        'bloomFilterMaxBytes',
+        'must be at least 32',
       );
     }
   }

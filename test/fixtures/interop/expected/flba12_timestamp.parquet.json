@@ -1,0 +1,120 @@
+{
+ "file": "official/flba12_timestamp.parquet",
+ "kind": "manual",
+ "writer_family": "parquet-mr",
+ "pyarrow": {
+  "ok": false,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": "ArrowInvalid: FLBA(12) TIMESTAMP value does not fit in a 64-bit Arrow timestamp"
+ },
+ "meta": {
+  "rows": 6,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.18.0-SNAPSHOT (build f954a72714b9a9c858bea8b016bc189deeb501fc)"
+ },
+ "leaves": [
+  {
+   "path": "timestamp_millis",
+   "physical": "fixedLenByteArray",
+   "type_length": 12,
+   "logical": "timestamp",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "timestamp_micros",
+   "physical": "fixedLenByteArray",
+   "type_length": 12,
+   "logical": "timestamp",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "timestamp_nanos",
+   "physical": "fixedLenByteArray",
+   "type_length": 12,
+   "logical": "timestamp",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "timestamp_millis",
+   "dart_class": "FixedLenColumn",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "6e3cceabfce5a657",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "{\"hex\":\"000000000000000000000000\"}",
+    "{\"hex\":\"e80300000000000000000000\"}",
+    "{\"hex\":\"18fcffffffffffffffffffff\"}",
+    "{\"hex\":\"a057d07b6308000000000000\"}",
+    "{\"hex\":\"18d81fd277e6000000000000\"}",
+    "{\"hex\":\"0028d3ed7cc7ffffffffffff\"}"
+   ]
+  },
+  {
+   "name": "timestamp_micros",
+   "dart_class": "FixedLenColumn",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "67e8325612f83eb1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "{\"hex\":\"000000000000000000000000\"}",
+    "{\"hex\":\"40420f000000000000000000\"}",
+    "{\"hex\":\"c0bdf0ffffffffffffffffff\"}",
+    "{\"hex\":\"0049d6a59bc4200000000000\"}",
+    "{\"hex\":\"c01d64cc0c44840300000000\"}",
+    "{\"hex\":\"0040d400014023ffffffffff\"}"
+   ]
+  },
+  {
+   "name": "timestamp_nanos",
+   "dart_class": "FixedLenColumn",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "9295d3a042ab950f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "{\"hex\":\"000000000000000000000000\"}",
+    "{\"hex\":\"00ca9a3b0000000000000000\"}",
+    "{\"hex\":\"003665c4ffffffffffffffff\"}",
+    "{\"hex\":\"00280dcdffffff7f00000000\"}",
+    "{\"hex\":\"00361467fed1a9bc0d000000\"}",
+    "{\"hex\":\"00001a3deb03b2a1fcffffff\"}"
+   ]
+  }
+ ]
+}

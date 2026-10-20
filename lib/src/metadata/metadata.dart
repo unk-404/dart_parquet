@@ -5,6 +5,7 @@ import '../format/parquet_format.dart';
 import '../io/source.dart';
 import '../schema/schema.dart';
 import '../util/errors.dart';
+import '../writer/bloom_filter.dart';
 import 'page_index.dart';
 
 export '../format/enums.dart' show CompressionType, Encoding, PhysicalType;
@@ -23,6 +24,7 @@ export '../format/parquet_format.dart'
         SortingColumn,
         Statistics;
 export '../schema/schema.dart' show ColumnDescriptor, ParquetSchema, SchemaNode;
+export '../writer/bloom_filter.dart' show BloomFilterHeader, ParquetBloomFilter;
 export 'page_index.dart';
 
 /// Metadata for a whole Parquet file: file metadata, schema and row groups.
@@ -33,14 +35,32 @@ final class ParquetMetadata {
   factory ParquetMetadata(FileMetaData fileMetadata, {ParquetSchema? schema}) {
     final effectiveSchema =
         schema ?? ParquetSchema.fromFileMetaData(fileMetadata);
+    if (fileMetadata.numRows < 0) {
+      throw ParquetFormatException(
+        'FileMetaData.num_rows is negative (${fileMetadata.numRows})',
+      );
+    }
     final rowGroups = <RowGroupMetaData>[];
+    var totalRows = 0;
     for (var i = 0; i < fileMetadata.rowGroups.length; i++) {
-      rowGroups.add(
-        RowGroupMetaData.fromRowGroup(
-          fileMetadata.rowGroups[i],
-          effectiveSchema,
-          rowGroupIndex: i,
-        ),
+      final group = RowGroupMetaData.fromRowGroup(
+        fileMetadata.rowGroups[i],
+        effectiveSchema,
+        rowGroupIndex: i,
+      );
+      if (group.numRows < 0) {
+        throw ParquetFormatException('row group $i has negative num_rows');
+      }
+      totalRows += group.numRows;
+      rowGroups.add(group);
+    }
+    // Some legacy writers leave FileMetaData.num_rows at 0 even when row
+    // groups contain rows (e.g. parquet-testing/repeated_no_annotation).
+    // Treat only a nonzero, inconsistent count as corruption.
+    if (fileMetadata.numRows != 0 && totalRows != fileMetadata.numRows) {
+      throw ParquetFormatException(
+        'FileMetaData.num_rows is ${fileMetadata.numRows} but row groups '
+        'sum to $totalRows',
       );
     }
     return ParquetMetadata._(
@@ -327,6 +347,22 @@ final class ColumnChunkMetaData {
     final length = columnIndexLength;
     if (offset == null || length == null) return null;
     return parseColumnIndex(await source.read(offset, length));
+  }
+
+  /// Reads the split-block Bloom filter for this chunk, if present.
+  ParquetBloomFilter? readBloomFilter(SyncParquetSource source) {
+    final offset = bloomFilterOffset;
+    final length = bloomFilterLength;
+    if (offset == null || length == null) return null;
+    return ParquetBloomFilter.read(source.read(offset, length));
+  }
+
+  /// Asynchronously reads the split-block Bloom filter, if present.
+  Future<ParquetBloomFilter?> readBloomFilterAsync(ParquetSource source) async {
+    final offset = bloomFilterOffset;
+    final length = bloomFilterLength;
+    if (offset == null || length == null) return null;
+    return ParquetBloomFilter.read(await source.read(offset, length));
   }
 
   /// Alias for [type].

@@ -1,0 +1,41 @@
+{
+ "file": "official/datapage_v2_empty_datapage.snappy.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.13.1 (build db4183109d5b734ec5930d870cdae161e408ddba)"
+ },
+ "leaves": [
+  {
+   "path": "value",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "value",
+   "dart_class": "Float32Column",
+   "length": 1,
+   "null_count": 1,
+   "checksum": "2ab8369a31422c6a",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "null"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

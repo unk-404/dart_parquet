@@ -16,7 +16,7 @@ import 'package:blit/blit.dart' show Bytes;
 
 import '../util/errors.dart';
 import '../util/int64.dart' show Int64Buffer;
-import 'plain.dart' show ByteArrayData;
+import 'plain.dart' show FixedLenData;
 
 void _checkAvailable(Bytes data, int needed, String what) {
   if (data.length < needed) {
@@ -121,8 +121,8 @@ Int64Buffer decodeByteStreamSplitInt64(Bytes data, {required int numValues}) {
 
 /// Decodes BYTE_STREAM_SPLIT FIXED_LEN_BYTE_ARRAY values.
 ///
-/// The result is a [ByteArrayData] with uniform offsets (`i * typeLength`).
-ByteArrayData decodeByteStreamSplitFixedLenByteArray(
+/// The result is [FixedLenData], matching PLAIN FLBA.
+FixedLenData decodeByteStreamSplitFixedLenByteArray(
   Bytes data, {
   required int numValues,
   required int typeLength,
@@ -149,9 +149,5 @@ ByteArrayData decodeByteStreamSplitFixedLenByteArray(
       out[i * typeLength + j] = source[streamOffset + i];
     }
   }
-  final offsets = Uint32List(numValues + 1);
-  for (var i = 0; i <= numValues; i++) {
-    offsets[i] = i * typeLength;
-  }
-  return ByteArrayData(out, offsets);
+  return FixedLenData(out, typeLength);
 }

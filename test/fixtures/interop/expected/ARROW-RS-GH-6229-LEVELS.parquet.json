@@ -1,0 +1,30 @@
+{
+ "file": "bad_data/ARROW-RS-GH-6229-LEVELS.parquet",
+ "kind": "malformed",
+ "writer_family": "parquet-cpp",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": "OSError: Number of decoded rep / def levels do not match num_values in page header"
+ },
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-cpp version(..151-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "outer.list.item.c",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "unknown",
+   "max_def": 4,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetException"
+}

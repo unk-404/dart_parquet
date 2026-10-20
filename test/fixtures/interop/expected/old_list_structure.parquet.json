@@ -1,0 +1,30 @@
+{
+ "file": "official/old_list_structure.parquet",
+ "kind": "unsupported",
+ "writer_family": "parquet-mr",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.14.3 (build b5e376a2caee767a11e75b783512b14cf8ca90ec)"
+ },
+ "leaves": [
+  {
+   "path": "a.array.array",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetUnsupportedException"
+}

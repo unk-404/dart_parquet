@@ -46,6 +46,16 @@ class SyncSourceAdapter implements ParquetSource {
   Future<void> close() async => _source.close();
 }
 
+/// Optional capability: a source that can serve many fixed-size ranges in one
+/// batched call.
+///
+/// Readers can use `source is BatchedParquetSource` to coalesce the page reads
+/// of a row group into one round trip. [readMany] must return exactly one
+/// buffer per offset, in the same order, each exactly [length] bytes.
+abstract interface class BatchedParquetSource {
+  Future<List<Bytes>> readMany(List<int> offsets, int length);
+}
+
 /// In-memory source. Zero-copy reads over the given [Bytes].
 final class MemorySource implements SyncParquetSource {
   MemorySource(Bytes bytes) : _bytes = bytes;

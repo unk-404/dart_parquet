@@ -1,0 +1,51 @@
+{
+ "file": "official/page_v2_empty_compressed.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 10,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 14.0.2"
+ },
+ "leaves": [
+  {
+   "path": "integer_column",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "integer_column",
+   "dart_class": "Int32Column",
+   "length": 10,
+   "null_count": 10,
+   "checksum": "6ea77f91c0f0354b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7,
+    8,
+    9
+   ],
+   "samples": [
+    "null",
+    "null",
+    "null",
+    "null",
+    "null",
+    "null"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

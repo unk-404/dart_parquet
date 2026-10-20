@@ -1,0 +1,51 @@
+{
+ "file": "official/rle_boolean_encoding.parquet",
+ "kind": "values",
+ "writer_family": "unknown",
+ "meta": {
+  "rows": 68,
+  "row_groups": 1,
+  "created_by": null
+ },
+ "leaves": [
+  {
+   "path": "datatype_boolean",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "datatype_boolean",
+   "dart_class": "BooleanColumn",
+   "length": 68,
+   "null_count": 6,
+   "checksum": "23c228e57a9f7b71",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    65,
+    66,
+    67
+   ],
+   "samples": [
+    "true",
+    "false",
+    "null",
+    "true",
+    "true",
+    "true"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

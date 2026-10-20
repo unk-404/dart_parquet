@@ -1,0 +1,105 @@
+{
+ "file": "official/hadoop_lz4_compressed.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 4,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.10.1 (build a89df8f9932b6ef6633d06069e50c9b7970bebd1)"
+ },
+ "leaves": [
+  {
+   "path": "c0",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c1",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "v11",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "c0",
+   "dart_class": "Int64Column",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "8f71b07ee90375df",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "1593604800",
+    "1593604800",
+    "1593604801",
+    "1593604801"
+   ]
+  },
+  {
+   "name": "c1",
+   "dart_class": "BinaryColumn",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "3997c19ca5f74229",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "{\"hex\":\"616263\"}",
+    "{\"hex\":\"646566\"}",
+    "{\"hex\":\"616263\"}",
+    "{\"hex\":\"646566\"}"
+   ]
+  },
+  {
+   "name": "v11",
+   "dart_class": "Float64Column",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "84531d53089a9f9c",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "{\"f64\":\"4045000000000000\"}",
+    "{\"f64\":\"401ecccccccccccd\"}",
+    "{\"f64\":\"4045100000000000\"}",
+    "{\"f64\":\"401ecccccccccccd\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,173 @@
+{
+ "file": "official/datapage_v2.snappy.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 5,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf)"
+ },
+ "leaves": [
+  {
+   "path": "a",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "b",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "d",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "e.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "BinaryColumn",
+   "length": 5,
+   "null_count": 1,
+   "checksum": "206da5092cdae522",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "samples": [
+    "\"abc\"",
+    "\"abc\"",
+    "\"abc\"",
+    "null",
+    "\"abc\""
+   ]
+  },
+  {
+   "name": "b",
+   "dart_class": "Int32Column",
+   "length": 5,
+   "null_count": 0,
+   "checksum": "8a5e236726062dfa",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "samples": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ]
+  },
+  {
+   "name": "c",
+   "dart_class": "Float64Column",
+   "length": 5,
+   "null_count": 0,
+   "checksum": "7cf92d630155ffb1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "samples": [
+    "{\"f64\":\"4000000000000000\"}",
+    "{\"f64\":\"4008000000000000\"}",
+    "{\"f64\":\"4010000000000000\"}",
+    "{\"f64\":\"4014000000000000\"}",
+    "{\"f64\":\"4000000000000000\"}"
+   ]
+  },
+  {
+   "name": "d",
+   "dart_class": "BooleanColumn",
+   "length": 5,
+   "null_count": 0,
+   "checksum": "59db445a8e793c28",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "samples": [
+    "true",
+    "true",
+    "true",
+    "false",
+    "true"
+   ]
+  },
+  {
+   "name": "e",
+   "dart_class": "ListColumn",
+   "length": 5,
+   "null_count": 2,
+   "checksum": "58a968251b6e8eae",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "samples": [
+    "[1,2,3]",
+    "null",
+    "null",
+    "[1,2,3]",
+    "[1,2]"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

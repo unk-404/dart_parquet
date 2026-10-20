@@ -1,0 +1,13 @@
+{
+ "file": "bad_data/PARQUET-1481.parquet",
+ "kind": "malformed",
+ "writer_family": "unknown",
+ "pyarrow": {
+  "ok": false,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": "OSError: Invalid physical column type: UNKNOWN",
+  "read_error": null
+ },
+ "exception": "ParquetException"
+}

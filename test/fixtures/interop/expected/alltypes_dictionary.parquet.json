@@ -1,0 +1,293 @@
+{
+ "file": "official/alltypes_dictionary.parquet",
+ "kind": "values",
+ "writer_family": "impala",
+ "meta": {
+  "rows": 2,
+  "row_groups": 1,
+  "created_by": "impala version 1.3.0-INTERNAL (build 8a48ddb1eff84592b3fc06bc6f51ec120e1fffc9)"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "bool_col",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "tinyint_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "smallint_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "bigint_col",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_col",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_col",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "date_string_col",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "string_col",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "timestamp_col",
+   "physical": "int96",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "id",
+   "dart_class": "Int32Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "f70ed7fa098d96a0",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "0",
+    "1"
+   ]
+  },
+  {
+   "name": "bool_col",
+   "dart_class": "BooleanColumn",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "1d2b6e822d41d5ee",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "true",
+    "false"
+   ]
+  },
+  {
+   "name": "tinyint_col",
+   "dart_class": "Int32Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "f70ed7fa098d96a0",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "0",
+    "1"
+   ]
+  },
+  {
+   "name": "smallint_col",
+   "dart_class": "Int32Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "f70ed7fa098d96a0",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "0",
+    "1"
+   ]
+  },
+  {
+   "name": "int_col",
+   "dart_class": "Int32Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "f70ed7fa098d96a0",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "0",
+    "1"
+   ]
+  },
+  {
+   "name": "bigint_col",
+   "dart_class": "Int64Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "5bbb2fde3b858dec",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "0",
+    "10"
+   ]
+  },
+  {
+   "name": "float_col",
+   "dart_class": "Float32Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "d85629102f1b12ac",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "{\"f32\":\"00000000\"}",
+    "{\"f32\":\"3f8ccccd\"}"
+   ]
+  },
+  {
+   "name": "double_col",
+   "dart_class": "Float64Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "76a241f2ab8a3b23",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "{\"f64\":\"0000000000000000\"}",
+    "{\"f64\":\"4024333333333333\"}"
+   ]
+  },
+  {
+   "name": "date_string_col",
+   "dart_class": "BinaryColumn",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "9d0e24cea392f5a1",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "{\"hex\":\"30312f30312f3039\"}",
+    "{\"hex\":\"30312f30312f3039\"}"
+   ]
+  },
+  {
+   "name": "string_col",
+   "dart_class": "BinaryColumn",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "617d6340e7aca994",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "{\"hex\":\"30\"}",
+    "{\"hex\":\"31\"}"
+   ]
+  },
+  {
+   "name": "timestamp_col",
+   "dart_class": "Int96Column",
+   "length": 2,
+   "null_count": 0,
+   "checksum": "8a9529cfad15cc13",
+   "sample_rows": [
+    0,
+    1
+   ],
+   "samples": [
+    "{\"hex\":\"000000000000000031752500\"}",
+    "{\"hex\":\"005847f80d00000031752500\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

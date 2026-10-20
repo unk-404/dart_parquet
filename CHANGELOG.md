@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.2
+
+- Final functional/API acceptance release.
+- Writer: `writeCrc` (CRC-32 page checksums), `writePageIndex`
+  (OffsetIndex/ColumnIndex), `writeBloomFilter` (Parquet Split Block Bloom
+  Filter with XXH64), all optional and off by default.
+- Reader: `verifyCrc`, OffsetIndex/ColumnIndex/Bloom read APIs.
+- Predicate API: `ColumnPredicate` + AND/OR/NOT over row-group statistics;
+  `readTable(predicate:)` prunes groups and filters flat rows.
+- I/O: `IoStrategy.auto|sync|mmap|batched|parallel`,
+  `openSourceWithStrategy`, read-only `MmapSource` and
+  `ParallelBytesFileSource`; `ParquetReader.fromSyncSource`.
+- Compatibility fixes: legacy PLAIN_DICTIONARY dictionary pages, empty
+  DATA_PAGE_V2 payloads, unknown LogicalType union members, BSS FLBA typing,
+  legacy `num_rows=0`, zero-row files, and nested-list mis-flattening now
+  throws a typed unsupported error.
+- Chrome/Wasm matrix expanded; official parquet-testing + pyarrow/DuckDB/Polars
+  interop and bounded fuzz tests added.
+- v0.1.3 is the performance release and must not break this API.
+
 ## 0.1.1
 
 - **Writer**: flat and nested LIST/STRUCT/MAP, all physical/logical types,

@@ -1,0 +1,480 @@
+{
+ "file": "official/byte_stream_split_extended.gzip.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 200,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 16.0.0-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "float16_plain",
+   "physical": "fixedLenByteArray",
+   "type_length": 2,
+   "logical": "float16",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float16_byte_stream_split",
+   "physical": "fixedLenByteArray",
+   "type_length": 2,
+   "logical": "float16",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_plain",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_byte_stream_split",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_plain",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_byte_stream_split",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int32_plain",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int32_byte_stream_split",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int64_plain",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int64_byte_stream_split",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "flba5_plain",
+   "physical": "fixedLenByteArray",
+   "type_length": 5,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "flba5_byte_stream_split",
+   "physical": "fixedLenByteArray",
+   "type_length": 5,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "decimal_plain",
+   "physical": "fixedLenByteArray",
+   "type_length": 4,
+   "logical": "decimal",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": 3,
+   "precision": 7
+  },
+  {
+   "path": "decimal_byte_stream_split",
+   "physical": "fixedLenByteArray",
+   "type_length": 4,
+   "logical": "decimal",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": 3,
+   "precision": 7
+  }
+ ],
+ "columns": [
+  {
+   "name": "float16_plain",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "43ffe01b118171f4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"2749\"}",
+    "{\"hex\":\"7b48\"}",
+    "{\"hex\":\"6049\"}",
+    "{\"hex\":\"cd48\"}",
+    "{\"hex\":\"ff48\"}",
+    "{\"hex\":\"eb48\"}"
+   ]
+  },
+  {
+   "name": "float16_byte_stream_split",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "43ffe01b118171f4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"2749\"}",
+    "{\"hex\":\"7b48\"}",
+    "{\"hex\":\"6049\"}",
+    "{\"hex\":\"cd48\"}",
+    "{\"hex\":\"ff48\"}",
+    "{\"hex\":\"eb48\"}"
+   ]
+  },
+  {
+   "name": "float_plain",
+   "dart_class": "Float32Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "f5f118a66752b224",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"f32\":\"412566b5\"}",
+    "{\"f32\":\"4136850c\"}",
+    "{\"f32\":\"41217309\"}",
+    "{\"f32\":\"4123aada\"}",
+    "{\"f32\":\"41287b25\"}",
+    "{\"f32\":\"4114b9a9\"}"
+   ]
+  },
+  {
+   "name": "float_byte_stream_split",
+   "dart_class": "Float32Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "f5f118a66752b224",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"f32\":\"412566b5\"}",
+    "{\"f32\":\"4136850c\"}",
+    "{\"f32\":\"41217309\"}",
+    "{\"f32\":\"4123aada\"}",
+    "{\"f32\":\"41287b25\"}",
+    "{\"f32\":\"4114b9a9\"}"
+   ]
+  },
+  {
+   "name": "double_plain",
+   "dart_class": "Float64Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "5c6d827c5b72a9a3",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"f64\":\"4023a409f907360c\"}",
+    "{\"f64\":\"402464bfd6278d66\"}",
+    "{\"f64\":\"4025a41c4eeeb588\"}",
+    "{\"f64\":\"4025a00d46a72dc4\"}",
+    "{\"f64\":\"40247bbad2a2c834\"}",
+    "{\"f64\":\"402073382c44647c\"}"
+   ]
+  },
+  {
+   "name": "double_byte_stream_split",
+   "dart_class": "Float64Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "5c6d827c5b72a9a3",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"f64\":\"4023a409f907360c\"}",
+    "{\"f64\":\"402464bfd6278d66\"}",
+    "{\"f64\":\"4025a41c4eeeb588\"}",
+    "{\"f64\":\"4025a00d46a72dc4\"}",
+    "{\"f64\":\"40247bbad2a2c834\"}",
+    "{\"f64\":\"402073382c44647c\"}"
+   ]
+  },
+  {
+   "name": "int32_plain",
+   "dart_class": "Int32Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "a21bffdec6d889c1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "24191",
+    "41157",
+    "7403",
+    "95977",
+    "73925",
+    "10300"
+   ]
+  },
+  {
+   "name": "int32_byte_stream_split",
+   "dart_class": "Int32Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "a21bffdec6d889c1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "24191",
+    "41157",
+    "7403",
+    "95977",
+    "73925",
+    "10300"
+   ]
+  },
+  {
+   "name": "int64_plain",
+   "dart_class": "Int64Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "31f5d7d11f7185c2",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "293650000000",
+    "41079000000",
+    "51248000000",
+    "663621000000",
+    "976709000000",
+    "836245000000"
+   ]
+  },
+  {
+   "name": "int64_byte_stream_split",
+   "dart_class": "Int64Column",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "31f5d7d11f7185c2",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "293650000000",
+    "41079000000",
+    "51248000000",
+    "663621000000",
+    "976709000000",
+    "836245000000"
+   ]
+  },
+  {
+   "name": "flba5_plain",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "b9ba1c86164133b1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"3033373935\"}",
+    "{\"hex\":\"3030333633\"}",
+    "{\"hex\":\"3031303338\"}",
+    "{\"hex\":\"3130383437\"}",
+    "{\"hex\":\"3130343139\"}",
+    "{\"hex\":\"3033333036\"}"
+   ]
+  },
+  {
+   "name": "flba5_byte_stream_split",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "b9ba1c86164133b1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"3033373935\"}",
+    "{\"hex\":\"3030333633\"}",
+    "{\"hex\":\"3031303338\"}",
+    "{\"hex\":\"3130383437\"}",
+    "{\"hex\":\"3130343139\"}",
+    "{\"hex\":\"3033333036\"}"
+   ]
+  },
+  {
+   "name": "decimal_plain",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "e0126366854e90f4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"000f5152\"}",
+    "{\"hex\":\"000ec879\"}",
+    "{\"hex\":\"0010dc26\"}",
+    "{\"hex\":\"000e5967\"}",
+    "{\"hex\":\"000f4593\"}",
+    "{\"hex\":\"001078c5\"}"
+   ]
+  },
+  {
+   "name": "decimal_byte_stream_split",
+   "dart_class": "FixedLenColumn",
+   "length": 200,
+   "null_count": 0,
+   "checksum": "e0126366854e90f4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    197,
+    198,
+    199
+   ],
+   "samples": [
+    "{\"hex\":\"000f5152\"}",
+    "{\"hex\":\"000ec879\"}",
+    "{\"hex\":\"0010dc26\"}",
+    "{\"hex\":\"000e5967\"}",
+    "{\"hex\":\"000f4593\"}",
+    "{\"hex\":\"001078c5\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,51 @@
+{
+ "file": "official/float16_nonzeros_and_nans.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 8,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 15.0.0-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "x",
+   "physical": "fixedLenByteArray",
+   "type_length": 2,
+   "logical": "float16",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "x",
+   "dart_class": "FixedLenColumn",
+   "length": 8,
+   "null_count": 1,
+   "checksum": "57cf3c2e6d06318d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    5,
+    6,
+    7
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"003c\"}",
+    "{\"hex\":\"00c0\"}",
+    "{\"hex\":\"00bc\"}",
+    "{\"hex\":\"0080\"}",
+    "{\"hex\":\"0040\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

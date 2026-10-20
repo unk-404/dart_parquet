@@ -1,0 +1,84 @@
+{
+ "file": "official/sort_columns.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 6,
+  "row_groups": 2,
+  "created_by": "parquet-cpp-arrow version 16.1.0"
+ },
+ "leaves": [
+  {
+   "path": "a",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "b",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "Int64Column",
+   "length": 6,
+   "null_count": 2,
+   "checksum": "5dfd8e3e8681f885",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "null",
+    "2",
+    "1",
+    "null",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "b",
+   "dart_class": "BinaryColumn",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "6276863c48177a05",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "\"a\"",
+    "\"b\"",
+    "\"c\"",
+    "\"a\"",
+    "\"b\"",
+    "\"c\""
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

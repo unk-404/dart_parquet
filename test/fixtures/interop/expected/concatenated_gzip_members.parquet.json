@@ -1,0 +1,51 @@
+{
+ "file": "official/concatenated_gzip_members.parquet",
+ "kind": "values",
+ "writer_family": "unknown",
+ "meta": {
+  "rows": 513,
+  "row_groups": 1,
+  "created_by": null
+ },
+ "leaves": [
+  {
+   "path": "long_col",
+   "physical": "int64",
+   "type_length": null,
+   "logical": "integer",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "long_col",
+   "dart_class": "Int64Column",
+   "length": 513,
+   "null_count": 0,
+   "checksum": "a17c147f06875890",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    510,
+    511,
+    512
+   ],
+   "samples": [
+    "1",
+    "2",
+    "3",
+    "511",
+    "512",
+    "513"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -9,11 +9,12 @@ runs on the Dart VM, dart2js and dart2wasm, and works with in-memory bytes,
 native files, blit OPFS/IndexedDB files, browser `Blob`/`File` slices, and HTTP
 Range readers.
 
-> **Status: v0.1.1 — feature-complete beta.**
+> **Status: v0.1.2 — final functional/API acceptance.**
 > Flat and nested read/write, all codecs, page v1/v2, dictionary/statistics,
-> nested projection, row-group pruning, streaming, page indexes, OPFS write and
-> automatic VM isolate reads are in. Page-index/bloom writing, CRC, predicate
-> pushdown and the long-lived isolate pool land in v0.1.2.
+> nested projection, row-group pruning, streaming, page indexes, Bloom filters,
+> CRC verification, predicate filtering, OPFS write, mmap/batched/parallel
+> sources and automatic VM isolate reads are in. v0.1.3 is the performance
+> release and must not break this API.
 
 ## Features
 
@@ -32,12 +33,19 @@ Range readers.
   limitations).
 - **Writer API**: `ParquetWriterOptions`, streaming `ParquetWriter.add`,
   `writeParquetTable`, flat `ParquetSchemaBuilder`, memory/file/OPFS output.
+- **Writer v0.1.2**: optional CRC32 page checksums, OffsetIndex/ColumnIndex and
+  Split Block Bloom filters (`writeCrc`, `writePageIndex`, `writeBloomFilter`).
 - **Reader API**: typed columns + row view, zero-copy binary values, top-level
   and dotted-path nested projection, statistics row-group filter, per-row-group
-  streaming, OffsetIndex/ColumnIndex read access.
+  streaming, OffsetIndex/ColumnIndex/Bloom read access, `verifyCrc`.
+- **Predicate API**: `ColumnPredicate` + AND/OR/NOT over row-group statistics,
+  plus flat-table row filtering via `ParquetTable.filterRows`/`readTable`.
 - **Parallel reads**: async `readTable` uses up to 8 isolates (`parallelism:
   auto|1|N`) for in-memory multi-row-group files; sync methods always run on the
   calling isolate. Web stays single-threaded.
+- **I/O strategies**: `IoStrategy.auto|sync|mmap|batched|parallel`,
+  `openSourceWithStrategy`, read-only `MmapSource` and
+  `ParallelBytesFileSource` (native), with OPFS/Blob/IndexedDB on Web.
 - **Exact 64-bit handling**: `Int64List` on the VM, two-limb storage on the web,
   with `BigInt` accessors.
 
@@ -156,7 +164,7 @@ A `Uint8List` can always be read synchronously without any Web storage API:
 final reader = ParquetReader.fromBytes(bytes);
 ```
 
-## Supported Parquet features (v0.1.1)
+## Supported Parquet features (v0.1.2)
 
 | Feature | Status |
 |---|---|
@@ -169,24 +177,31 @@ final reader = ParquetReader.fromBytes(bytes);
 | Flat schemas | read + write |
 | LIST of leaf or struct; STRUCT; MAP leaf→leaf | read + write |
 | Nested projection (dotted paths) | read |
-| Statistics row-group pruning | read (`rowGroupFilter`) |
-| OffsetIndex / ColumnIndex read | read |
+| Statistics row-group pruning | read (`rowGroupFilter`, `predicate`) |
+| OffsetIndex / ColumnIndex | read + write |
+| Split Block Bloom filters | read + write |
+| Page CRC32 | read (`verifyCrc`) + write (`writeCrc`) |
+| Predicate API + flat row filtering | read |
 | Async per-row-group streaming | read |
 | Automatic isolate reads (`parallelism: auto`) | read, VM only |
-| Multiple row groups | read + write |
+| mmap / batched / parallel native sources | read |
+| Multiple row groups, zero-row files | read + write |
 | Encryption, geospatial, Variant, ALP, CDC | no (post-1.0) |
-| Page index/bloom/CRC write, predicate API | v0.1.2 |
+| Page-level predicate skipping / builder tuning | v0.1.3 (performance) |
 
 ### Known limitations
 
 - Deeper nesting shapes (list of list, map inside list, list/map inside a
-  struct) are rejected by the reader and writer in v0.1.1.
+  struct) are rejected with a typed `ParquetUnsupportedException`.
 - Bare repeated leaf/group fields are not supported; use the LIST annotation.
 - Writer dictionary encoding is used for BYTE_ARRAY/FLBA; numeric columns are
   written PLAIN.
-- `maxRows` truncation works for flat columns; nested truncation is v0.1.2.
+- `maxRows` truncation works for flat columns; nested truncation is not part of
+  the v0.1.2 API.
+- Predicate row filtering is implemented for flat tables; nested row filtering
+  returns a typed unsupported error. Page-level predicate skipping is v0.1.3.
 - Parallel reads are `Isolate.run` per row group on VM memory sources; the
-  long-lived pool, writer-side parallel encode and Web Workers are v0.1.2.
+  long-lived pool, writer-side parallel encode and Web Workers are v0.1.3.
 - Web Blob sources are read-only; IndexedDB is an explicit async fallback
   (`idb://`), not a replacement for OPFS on every browser.
 - LZO is a legacy/deprecated Parquet codec; both Hadoop
@@ -201,6 +216,15 @@ asynchronous `ParquetSource`:
 ```dart
 final source = MemorySource.fromUint8List(bytes); // sync
 final reader = ParquetReader.fromBytes(bytes);   // convenience
+
+// Or choose an I/O engine explicitly on native:
+final opened = await openSourceWithStrategy(
+  'data.parquet',
+  strategy: IoStrategy.mmap,
+);
+final mmapReader = opened.canReadSync
+    ? ParquetReader.fromSyncSource(opened.sync!)
+    : await ParquetReader.open(opened);
 ```
 
 Adapters live in `lib/src/io/`:
@@ -212,6 +236,10 @@ Adapters live in `lib/src/io/`:
 - `BlitSource.openIndexedDb` / `openIdbBlitSource` (blit 0.1.6 IDB backend)
 - `HttpRangeSource` (callback-based; bring your own HTTP client)
 - `openSource` / `openSourceSync` with `file://`, `opfs://` and `idb://` support
+- `MmapSource` / `openMmapSourceSync` (native read-only zero-copy mapping)
+- `ParallelBytesFileSource` / `openParallelSource` (native worker-pool reads)
+- `IoStrategy` + `openSourceWithStrategy` / `OpenedParquetSource` (auto/sync/
+  mmap/batched/parallel, plus `.sync` for `ParquetReader.fromSyncSource`)
 
 Writer sinks (`lib/src/writer/file_output*.dart`):
 
@@ -233,6 +261,9 @@ Snappy/Zstd/Brotli/LZ4_RAW, i64 projection, nested list/struct, metadata-only
 parse, four-isolate/four-thread variants, and flat/nested writes across codecs
 and page versions. The Rust harness lives in [`benchmark/rust`](benchmark/rust)
 and is pinned to `parquet = "=60.0.0"`.
+
+v0.1.2 locks correctness, API and the comparison harness; the performance gates
+and throughput optimization work are v0.1.3 and keep this API unchanged.
 
 Benchmark fixtures are committed under `benchmark/fixtures/`; raw JSONL is
 uploaded as a CI artifact, and only the rendered SVG is committed.
@@ -260,6 +291,13 @@ dart test -j 4
 Linux/macOS, Chrome and Wasm tests run in GitHub Actions. Benchmarks build the
 Rust counterpart with `cargo build --release --locked` and run it after the Dart
 JIT/AOT suites.
+
+More docs:
+
+- [Web storage and browser matrix](doc/web.md)
+- [Wasm matrix and limitations](doc/wasm.md)
+- [Benchmark method, v0.1.1 baseline and v0.1.3 gates](doc/benchmark.md)
+- [Official parquet-testing fixture provenance](test/fixtures/interop/README.md)
 
 ## License
 

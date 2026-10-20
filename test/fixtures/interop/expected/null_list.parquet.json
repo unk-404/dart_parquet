@@ -1,0 +1,41 @@
+{
+ "file": "official/null_list.parquet",
+ "kind": "values",
+ "writer_family": "arrow-rs",
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-rs version 9.0.0"
+ },
+ "leaves": [
+  {
+   "path": "emptylist.list.item",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "unknown",
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "emptylist",
+   "dart_class": "ListColumn",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "dcd1cd1a2138b85d",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "[]"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

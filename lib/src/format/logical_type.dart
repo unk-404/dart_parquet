@@ -199,9 +199,9 @@ sealed class LogicalType {
       case 19:
         return const FileLogicalType();
       default:
-        throw ParquetFormatException(
-          'unknown LogicalType union field $fieldId',
-        );
+        // New writers may add logical-type union members. They are annotations
+        // only; readers must still be able to read the physical column.
+        return const UnknownLogicalType();
     }
   }
 }

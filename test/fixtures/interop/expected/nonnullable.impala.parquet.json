@@ -1,0 +1,150 @@
+{
+ "file": "official/nonnullable.impala.parquet",
+ "kind": "unsupported",
+ "writer_family": "parquet-mr",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.8.0 (build 0fda28af84b9746396014ad6a415b90592a98b3b)"
+ },
+ "leaves": [
+  {
+   "path": "ID",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "Int_Array.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int_array_array.list.element.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "Int_Map.map.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "Int_Map.map.value",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int_map_array.list.element.map.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int_map_array.list.element.map.value",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.a",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.B.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.c.D.list.element.list.element.e",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.c.D.list.element.list.element.f",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.G.map.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested_Struct.G.map.value.h.i.list.element",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetUnsupportedException"
+}

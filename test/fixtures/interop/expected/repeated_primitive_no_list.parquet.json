@@ -1,0 +1,60 @@
+{
+ "file": "official/repeated_primitive_no_list.parquet",
+ "kind": "unsupported",
+ "writer_family": "arrow-rs",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 4,
+  "row_groups": 1,
+  "created_by": "parquet-rs version 53.2.0"
+ },
+ "leaves": [
+  {
+   "path": "Int32_list",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "String_list",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "group_of_lists.Int32_list_in_group",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "group_of_lists.String_list_in_group",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetUnsupportedException"
+}

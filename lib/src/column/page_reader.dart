@@ -12,6 +12,7 @@ import '../format/page_header.dart';
 import '../io/source.dart';
 import '../metadata/metadata.dart';
 import '../util/bytes.dart';
+import '../util/crc32.dart';
 import '../util/errors.dart';
 import '../util/int64.dart';
 import 'decoded_values.dart';
@@ -47,10 +48,13 @@ final class DecodedColumnChunk {
 
 /// Reads and decodes the pages of a single column chunk.
 final class ColumnChunkReader {
-  ColumnChunkReader(this.metadata, this.descriptor);
+  ColumnChunkReader(this.metadata, this.descriptor, {this.verifyCrc = false});
 
   final ColumnChunkMetaData metadata;
   final ColumnDescriptor descriptor;
+
+  /// Verify `PageHeader.crc` against the compressed page body when present.
+  final bool verifyCrc;
 
   int get _startOffset {
     final offset = metadata.dictionaryPageOffset ?? metadata.dataPageOffset;
@@ -62,8 +66,18 @@ final class ColumnChunkReader {
     return offset;
   }
 
+  /// An empty chunk for a zero-row row group.
+  DecodedColumnChunk _emptyChunk() => DecodedColumnChunk(
+    numValues: 0,
+    presentCount: 0,
+    repLevels: null,
+    defLevels: null,
+    values: _emptyValues(descriptor.physicalType, descriptor.typeLength),
+  );
+
   /// Reads the whole compressed column chunk from [source] and decodes it.
   Future<DecodedColumnChunk> read(ParquetSource source) async {
+    if (metadata.numValues == 0) return _emptyChunk();
     final start = _startOffset;
     final length = metadata.totalCompressedSize;
     if (length <= 0) {
@@ -77,6 +91,7 @@ final class ColumnChunkReader {
 
   /// Synchronous variant for [SyncParquetSource].
   DecodedColumnChunk readSync(SyncParquetSource source) {
+    if (metadata.numValues == 0) return _emptyChunk();
     final start = _startOffset;
     final length = metadata.totalCompressedSize;
     if (length <= 0) {
@@ -109,6 +124,17 @@ final class ColumnChunkReader {
         );
       }
       final body = reader.readSlice(header.compressedPageSize);
+      if (verifyCrc && header.crc != null) {
+        final expected = header.crc! & 0xFFFFFFFF;
+        final actual = crc32(body.asUint8List());
+        if (actual != expected) {
+          throw ParquetFormatException(
+            'CRC mismatch in page $pageIndex of ${descriptor.dotPath}: '
+            'expected 0x${expected.toRadixString(16)}, '
+            'got 0x${actual.toRadixString(16)}',
+          );
+        }
+      }
       switch (header.type) {
         case PageType.dictionaryPage:
           if (dictionary != null) {
@@ -121,10 +147,11 @@ final class ColumnChunkReader {
             body,
             uncompressedSize: header.uncompressedPageSize,
           );
-          if (dictHeader.encoding != Encoding.plain) {
+          if (dictHeader.encoding != Encoding.plain &&
+              dictHeader.encoding != Encoding.plainDictionary) {
             throw ParquetUnsupportedException(
               'dictionary page encoding ${dictHeader.encoding} is not '
-              'supported (only PLAIN)',
+              'supported (only PLAIN/PLAIN_DICTIONARY)',
             );
           }
           dictionary = decodePlainValues(
@@ -320,7 +347,9 @@ final class ColumnChunkReader {
         'DATA_PAGE_V2 uncompressed size is smaller than its levels',
       );
     }
-    final valueBytes = dataHeader.isCompressed
+    // A valid empty v2 data page can have compressed_page_size=0. The spec
+    // requires readers not to feed those bytes to the decompressor.
+    final valueBytes = dataHeader.isCompressed && valueBody.isNotEmpty
         ? codec.decode(valueBody, uncompressedSize: uncompressedValueSize)
         : valueBody;
     final present = _presentCount(def, numValues);

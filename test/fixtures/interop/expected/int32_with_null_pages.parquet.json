@@ -1,0 +1,51 @@
+{
+ "file": "official/int32_with_null_pages.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 1000,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.13.0-SNAPSHOT (build 433de8df33fcf31927f7b51456be9f53e64d48b9)"
+ },
+ "leaves": [
+  {
+   "path": "int32_field",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "int32_field",
+   "dart_class": "Int32Column",
+   "length": 1000,
+   "null_count": 275,
+   "checksum": "e8d34e6fd52c824e",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "-654807448",
+    "-465559769",
+    "-34563097",
+    "211608450",
+    "1341709713",
+    "303403251"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

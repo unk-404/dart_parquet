@@ -1,0 +1,70 @@
+{
+ "file": "official/nested_maps.snappy.parquet",
+ "kind": "unsupported",
+ "writer_family": "parquet-mr",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 6,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.8.2 (build c6522788629e590a53eb79874b95f6c3ff11f16c)"
+ },
+ "leaves": [
+  {
+   "path": "a.key_value.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 2,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "a.key_value.value.key_value.key",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 4,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "a.key_value.value.key_value.value",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 4,
+   "max_rep": 2,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "b",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetUnsupportedException"
+}

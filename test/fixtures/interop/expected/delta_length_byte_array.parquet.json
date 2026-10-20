@@ -1,0 +1,51 @@
+{
+ "file": "official/delta_length_byte_array.parquet",
+ "kind": "values",
+ "writer_family": "unknown",
+ "meta": {
+  "rows": 1000,
+  "row_groups": 1,
+  "created_by": null
+ },
+ "leaves": [
+  {
+   "path": "FRUIT",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "FRUIT",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 0,
+   "checksum": "a683634d1c9699bb",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"apple_banana_mango0\"",
+    "\"apple_banana_mango1\"",
+    "\"apple_banana_mango4\"",
+    "\"apple_banana_mango994009\"",
+    "\"apple_banana_mango996004\"",
+    "\"apple_banana_mango998001\""
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

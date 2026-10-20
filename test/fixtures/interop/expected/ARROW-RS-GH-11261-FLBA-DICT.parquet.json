@@ -1,0 +1,40 @@
+{
+ "file": "bad_data/ARROW-RS-GH-11261-FLBA-DICT.parquet",
+ "kind": "malformed",
+ "writer_family": "arrow-rs",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": "OSError: Unencoded byte array data bytes does not support FIXED_LEN_BYTE_ARRAY"
+ },
+ "meta": {
+  "rows": 52,
+  "row_groups": 13,
+  "created_by": "parquet-rs version 60.0.0"
+ },
+ "leaves": [
+  {
+   "path": "flat",
+   "physical": "fixedLenByteArray",
+   "type_length": 4,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "nested.list.item",
+   "physical": "fixedLenByteArray",
+   "type_length": 4,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetException"
+}

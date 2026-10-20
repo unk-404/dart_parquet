@@ -1,0 +1,51 @@
+{
+ "file": "official/byte_array_decimal.parquet",
+ "kind": "values",
+ "writer_family": "hvr",
+ "meta": {
+  "rows": 24,
+  "row_groups": 1,
+  "created_by": "HVR 5.3.0/9 (linux_glibc2.5-x64-64bit)"
+ },
+ "leaves": [
+  {
+   "path": "value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "decimal",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": 2,
+   "precision": 4
+  }
+ ],
+ "columns": [
+  {
+   "name": "value",
+   "dart_class": "BinaryColumn",
+   "length": 24,
+   "null_count": 0,
+   "checksum": "faa2d25518a9d46d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    21,
+    22,
+    23
+   ],
+   "samples": [
+    "{\"hex\":\"64\"}",
+    "{\"hex\":\"00c8\"}",
+    "{\"hex\":\"012c\"}",
+    "{\"hex\":\"0898\"}",
+    "{\"hex\":\"08fc\"}",
+    "{\"hex\":\"0960\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

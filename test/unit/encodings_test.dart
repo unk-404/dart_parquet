@@ -1872,7 +1872,7 @@ void main() {
         typeLength: 3,
       );
       expect(out.numValues, values.length);
-      expect(out.offsets, <int>[0, 3, 6, 9, 12]);
+      expect(out.width, 3);
       for (var i = 0; i < values.length; i++) {
         expect(out.valueAt(i), values[i], reason: 'value $i');
       }
@@ -1887,7 +1887,8 @@ void main() {
         typeLength: 4,
       );
       expect(fixed.numValues, 0);
-      expect(fixed.offsets, <int>[0]);
+      expect(fixed.width, 4);
+      expect(fixed.data, isEmpty);
     });
 
     test('truncated data and invalid lengths are rejected', () {

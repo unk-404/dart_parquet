@@ -1,0 +1,50 @@
+{
+ "file": "official/repeated_no_annotation.parquet",
+ "kind": "unsupported",
+ "writer_family": "arrow-rs",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 0,
+  "row_groups": 1,
+  "created_by": "parquet-rs version 0.3.0 (build b45ce7cba2199f22d93269c150d8a83916c69b5e)"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "phoneNumbers.phone.number",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "phoneNumbers.phone.kind",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetUnsupportedException"
+}

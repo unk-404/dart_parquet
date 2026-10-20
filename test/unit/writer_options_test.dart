@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('ParquetWriterOptions', () {
-    test('defaults match the v0.1.1 contract', () {
+    test('defaults match the v0.1.2 contract', () {
       const options = ParquetWriterOptions();
       expect(options.compression, CompressionType.uncompressed);
       expect(options.useDictionary, isTrue);
@@ -14,9 +14,14 @@ void main() {
       expect(options.dataPageVersion, 1);
       expect(options.writeStatistics, isTrue);
       expect(options.pageSize, 1024 * 1024);
-      expect(options.createdBy, 'parquet-dart version 0.1.1');
+      expect(options.createdBy, 'parquet-dart version 0.1.2');
       expect(options.keyValueMetadata, isNull);
       expect(options.codec, isNotNull);
+      expect(options.writeCrc, isFalse);
+      expect(options.writePageIndex, isFalse);
+      expect(options.writeBloomFilter, isFalse);
+      expect(options.bloomFilterFpp, 0.01);
+      expect(options.bloomFilterMaxBytes, 1024 * 1024);
     });
 
     test('validate rejects invalid page versions and sizes', () {
@@ -37,6 +42,25 @@ void main() {
             const ParquetWriterOptions(dictionaryPageSizeLimit: -1).validate(),
         throwsArgumentError,
       );
+      expect(
+        () => const ParquetWriterOptions(bloomFilterFpp: 0).validate(),
+        throwsArgumentError,
+      );
+      expect(
+        () => const ParquetWriterOptions(bloomFilterFpp: 1).validate(),
+        throwsArgumentError,
+      );
+      expect(
+        () => const ParquetWriterOptions(bloomFilterMaxBytes: 31).validate(),
+        throwsArgumentError,
+      );
+    });
+
+    test('v0.1.2 features default to off', () {
+      const options = ParquetWriterOptions();
+      expect(options.writeCrc, isFalse);
+      expect(options.writePageIndex, isFalse);
+      expect(options.writeBloomFilter, isFalse);
     });
 
     test('writer constructor validates options', () {

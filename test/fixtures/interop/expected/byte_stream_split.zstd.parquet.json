@@ -1,0 +1,84 @@
+{
+ "file": "official/byte_stream_split.zstd.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 300,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 14.0.2"
+ },
+ "leaves": [
+  {
+   "path": "f32",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "f64",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "f32",
+   "dart_class": "Float32Column",
+   "length": 300,
+   "null_count": 0,
+   "checksum": "a44eca3e22f2f72b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    297,
+    298,
+    299
+   ],
+   "samples": [
+    "{\"f32\":\"3fe1cc78\"}",
+    "{\"f32\":\"3ecce168\"}",
+    "{\"f32\":\"3f7a8e93\"}",
+    "{\"f32\":\"3f153c74\"}",
+    "{\"f32\":\"becc8495\"}",
+    "{\"f32\":\"3ebd77f7\"}"
+   ]
+  },
+  {
+   "name": "f64",
+   "dart_class": "Float64Column",
+   "length": 300,
+   "null_count": 0,
+   "checksum": "22639a262b0a24a1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    297,
+    298,
+    299
+   ],
+   "samples": [
+    "{\"f64\":\"bff4e788b338c8cf\"}",
+    "{\"f64\":\"3ffa87b40917451b\"}",
+    "{\"f64\":\"bfbe3fffb563e914\"}",
+    "{\"f64\":\"bfcbbddb591165fb\"}",
+    "{\"f64\":\"bfedc3d791d01e52\"}",
+    "{\"f64\":\"bfc6dc01e2f7fd16\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

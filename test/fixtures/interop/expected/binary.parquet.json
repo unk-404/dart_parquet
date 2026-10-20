@@ -1,0 +1,51 @@
+{
+ "file": "official/binary.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 12,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.10.0 (build 031a6654009e3b82020012a18434c582bd74c73a)"
+ },
+ "leaves": [
+  {
+   "path": "foo",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "foo",
+   "dart_class": "BinaryColumn",
+   "length": 12,
+   "null_count": 0,
+   "checksum": "bdf6a25081bf45a5",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    9,
+    10,
+    11
+   ],
+   "samples": [
+    "{\"hex\":\"00\"}",
+    "{\"hex\":\"01\"}",
+    "{\"hex\":\"02\"}",
+    "{\"hex\":\"09\"}",
+    "{\"hex\":\"0a\"}",
+    "{\"hex\":\"0b\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

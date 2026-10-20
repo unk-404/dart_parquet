@@ -1,0 +1,52 @@
+{
+ "file": "official/int96_from_spark.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 6,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.13.1 (build db4183109d5b734ec5930d870cdae161e408ddba)"
+ },
+ "leaves": [
+  {
+   "path": "a",
+   "physical": "int96",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "Int96Column",
+   "length": 6,
+   "null_count": 1,
+   "checksum": "4d7faee5dbeea8e1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "{\"hex\":\"002a1ed963430000978a2500\"}",
+    "{\"hex\":\"00a0b83046030000978a2500\"}",
+    "{\"hex\":\"00e02992d20900002cfe5100\"}",
+    "{\"hex\":\"006096604e4b0000038c2500\"}",
+    "null",
+    "{\"hex\":\"0060b9c76ee2ffffa8abb0f9\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ },
+ "note": "Rows 0-4 reconstructed from the documented microseconds in apache/parquet-testing data/int96_from_spark.md; row 5 stores an out-of-range INT96 (negative Julian day/nanos) that pyarrow, DuckDB and Polars wrap or saturate, so its literal bytes are pinned from the fixture"
+}

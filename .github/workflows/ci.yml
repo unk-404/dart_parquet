@@ -42,10 +42,9 @@ jobs:
           test/web
       - name: Wasm tests
         if: matrix.os == 'ubuntu-latest'
-        continue-on-error: true # v0.1.0 declares dart2wasm as planned; keep it visible but non-blocking
         env:
           CHROME_EXECUTABLE: /usr/bin/google-chrome
-        run: dart test -p chrome -c dart2wasm test/web
+        run: dart test -j 4 -p chrome -c dart2wasm test/wasm
 
   benchmark:
     name: benchmark

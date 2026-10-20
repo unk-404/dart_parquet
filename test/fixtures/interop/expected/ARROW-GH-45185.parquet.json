@@ -1,0 +1,30 @@
+{
+ "file": "bad_data/ARROW-GH-45185.parquet",
+ "kind": "malformed",
+ "writer_family": "arrow-cpp",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": "OSError: The repetition level at the start of a record must be 0 but got 1"
+ },
+ "meta": {
+  "rows": 5,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 19.0.0-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "x.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "integer",
+   "max_def": 1,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetException"
+}

@@ -38,7 +38,7 @@ void main() {
             final back = reader.readTableSync();
             expectTablesEqual(source, back);
             expect(reader.numRowGroups, 1);
-            expect(reader.createdBy, 'parquet-dart version 0.1.1');
+            expect(reader.createdBy, 'parquet-dart version 0.1.2');
             expect(reader.metadata.rowGroup(0).numRows, source.numRows);
           },
         );

@@ -5,12 +5,82 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:parquet/parquet.dart';
+import 'package:parquet/src/format/page_header.dart';
+import 'package:parquet/src/util/bytes.dart';
 import 'package:parquet/src/util/int64.dart';
+import 'package:parquet/src/writer/encoders.dart';
 import 'package:test/test.dart';
 
 /// This file only holds helpers; the empty entry point keeps `dart test`
 /// happy when it is matched by a `writer_*` glob.
 void main() {}
+
+/// One page read from a column chunk (body is the compressed bytes as stored).
+final class ChunkPage {
+  /// Creates a page.
+  const ChunkPage({
+    required this.offset,
+    required this.header,
+    required this.body,
+  });
+
+  /// Absolute file offset of the page header.
+  final int offset;
+
+  /// Parsed page header.
+  final PageHeader header;
+
+  /// Compressed page body (`compressed_page_size` bytes).
+  final Bytes body;
+
+  /// Serialized header size.
+  int get headerLength => header.bytesConsumed;
+}
+
+/// Reads every page of [chunk] from [fileBytes] in storage order.
+List<ChunkPage> readChunkPages(Uint8List fileBytes, ColumnChunkMetaData chunk) {
+  final start = chunk.dictionaryPageOffset ?? chunk.dataPageOffset!;
+  final source = MemorySource.fromUint8List(fileBytes);
+  final data = source.read(start, chunk.totalCompressedSize);
+  final input = ByteReader(data);
+  final pages = <ChunkPage>[];
+  while (input.remaining > 0) {
+    final offset = start + input.position;
+    final header = readPageHeaderWithSize(input);
+    final body = input.readSlice(header.header.compressedPageSize);
+    pages.add(ChunkPage(offset: offset, header: header.header, body: body));
+  }
+  return pages;
+}
+
+/// Encodes a canonical shredded value the way Parquet Bloom filters hash it
+/// (PLAIN bytes, no BYTE_ARRAY length prefix).
+Uint8List canonicalBloomBytes(Object? value, PhysicalType type) {
+  final data = ByteData(8);
+  switch (type) {
+    case PhysicalType.boolean:
+      return Uint8List.fromList([(value as bool) ? 1 : 0]);
+    case PhysicalType.int32:
+      data.setInt32(0, value as int, Endian.little);
+      return data.buffer.asUint8List(0, 4);
+    case PhysicalType.int64:
+      final v = value as Int64Value;
+      data
+        ..setUint32(0, v.lo, Endian.little)
+        ..setUint32(4, v.hi, Endian.little);
+      return data.buffer.asUint8List(0, 8);
+    case PhysicalType.float:
+      data.setFloat32(0, value as double, Endian.little);
+      return data.buffer.asUint8List(0, 4);
+    case PhysicalType.double:
+      data.setFloat64(0, value as double, Endian.little);
+      return data.buffer.asUint8List();
+    case PhysicalType.byteArray:
+    case PhysicalType.fixedLenByteArray:
+    case PhysicalType.int96:
+      return value as Uint8List;
+  }
+}
 
 /// Reads `test/fixtures/[name]` and decodes every row group.
 ParquetTable readFixtureTable(String name) {

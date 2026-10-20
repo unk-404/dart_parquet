@@ -1,0 +1,315 @@
+{
+ "file": "official/delta_byte_array.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 1000,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.10.0 (build 031a6654009e3b82020012a18434c582bd74c73a)"
+ },
+ "leaves": [
+  {
+   "path": "c_customer_id",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_salutation",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_first_name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_last_name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_preferred_cust_flag",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_birth_country",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_login",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_email_address",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_last_review_date",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "c_customer_id",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 0,
+   "checksum": "267eabfeb8c32ec0",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"AAAAAAAAIODAAAAA\"",
+    "\"AAAAAAAAHODAAAAA\"",
+    "\"AAAAAAAAGODAAAAA\"",
+    "\"AAAAAAAADAAAAAAA\"",
+    "\"AAAAAAAACAAAAAAA\"",
+    "\"AAAAAAAABAAAAAAA\""
+   ]
+  },
+  {
+   "name": "c_salutation",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 30,
+   "checksum": "d8d20e4e7711d7cb",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"Sir\"",
+    "\"Mrs.\"",
+    "\"Ms.\"",
+    "\"Miss\"",
+    "\"Dr.\"",
+    "\"Mr.\""
+   ]
+  },
+  {
+   "name": "c_first_name",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 32,
+   "checksum": "353f8428bae8f2b2",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"Mark\"",
+    "\"Lisa\"",
+    "\"Evelyn\"",
+    "\"Latisha\"",
+    "\"Amy\"",
+    "\"Javier\""
+   ]
+  },
+  {
+   "name": "c_last_name",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 24,
+   "checksum": "94d9a732700f3abc",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"Bailey\"",
+    "\"Clark\"",
+    "\"Joyner\"",
+    "\"Hamilton\"",
+    "\"Moses\"",
+    "\"Lewis\""
+   ]
+  },
+  {
+   "name": "c_preferred_cust_flag",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 29,
+   "checksum": "8b7573424b33c246",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"N\"",
+    "\"Y\"",
+    "\"N\"",
+    "\"N\"",
+    "\"Y\"",
+    "\"Y\""
+   ]
+  },
+  {
+   "name": "c_birth_country",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 31,
+   "checksum": "fd44fe935257b7ff",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"MOROCCO\"",
+    "\"ITALY\"",
+    "\"TUVALU\"",
+    "\"NIUE\"",
+    "\"TOGO\"",
+    "\"CHILE\""
+   ]
+  },
+  {
+   "name": "c_login",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 1000,
+   "checksum": "5c9a1a5ca1b631cd",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "null",
+    "null",
+    "null",
+    "null",
+    "null",
+    "null"
+   ]
+  },
+  {
+   "name": "c_email_address",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 31,
+   "checksum": "a06ed4631b707ef6",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"Mark.Bailey@rg9qCNVJ0s7qeY.com\"",
+    "\"Lisa.Clark@goPYS4tMB0.org\"",
+    "\"Evelyn.Joyner@ialYx1zLN.edu\"",
+    "\"Latisha.Hamilton@V.com\"",
+    "\"Amy.Moses@Ovk9KjHH.com\"",
+    "\"Javier.Lewis@VFAxlnZEvOx.org\""
+   ]
+  },
+  {
+   "name": "c_last_review_date",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 25,
+   "checksum": "b8bed8bd57e5a3a1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "\"2452443\"",
+    "\"2452646\"",
+    "\"2452439\"",
+    "\"2452313\"",
+    "\"2452318\"",
+    "\"2452508\""
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

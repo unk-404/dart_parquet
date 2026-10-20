@@ -18,6 +18,7 @@ import '../schema/schema.dart';
 import '../table/table.dart';
 import '../util/bytes.dart';
 import 'column_writer.dart';
+import 'page_index_writer.dart';
 import 'schema_encoder.dart';
 import 'shredder.dart';
 import 'writer_options.dart';
@@ -54,6 +55,8 @@ final class ParquetWriter {
   final ByteWriter _out = ByteWriter();
   late final List<Map<int, Object?>> _schemaElements;
   final List<Map<int, Object?>> _rowGroups = <Map<int, Object?>>[];
+  final List<List<ColumnChunkWriteResult>> _rowGroupChunks =
+      <List<ColumnChunkWriteResult>>[];
   int _numRows = 0;
   int _rowGroupOrdinal = 0;
   bool _finished = false;
@@ -77,15 +80,18 @@ final class ParquetWriter {
 
     final rowGroupStart = _out.length;
     final chunks = <Map<int, Object?>>[];
+    final chunkResults = <ColumnChunkWriteResult>[];
     var totalByteSize = 0;
     var totalCompressedSize = 0;
     for (final leaf in leaves) {
       final result = writeLeafChunk(leaf, _out, options);
+      chunkResults.add(result);
       chunks.add(result.metadata);
       totalByteSize += result.totalUncompressedSize;
       totalCompressedSize += result.totalCompressedSize;
     }
 
+    _rowGroupChunks.add(chunkResults);
     _rowGroups.add(<int, Object?>{
       1: TList(TCompactType.struct, chunks),
       2: ThriftI64(totalByteSize),
@@ -105,6 +111,9 @@ final class ParquetWriter {
       throw StateError('ParquetWriter.finish() has already been called');
     }
     _finished = true;
+
+    if (options.writePageIndex) _writePageIndexes();
+    if (options.writeBloomFilter) _writeBloomFilters();
 
     final footer = <int, Object?>{
       1: ThriftI32(1), // FileMetaData.version
@@ -134,6 +143,44 @@ final class ParquetWriter {
       ..writeUint32LE(footerBytes.length)
       ..writeUint8List(_magic);
     return Uint8List.fromList(_out.bytes.asUint8List());
+  }
+
+  /// Appends every chunk's `OffsetIndex` (and `ColumnIndex` when available)
+  /// after the column data and patches the `ColumnChunk` offsets.
+  void _writePageIndexes() {
+    for (final chunks in _rowGroupChunks) {
+      for (final chunk in chunks) {
+        final offsetIndex = encodeOffsetIndex(chunk.pages);
+        final offsetIndexOffset = _out.length;
+        _out.writeBytes(Bytes.fromUint8List(offsetIndex));
+        chunk.metadata[4] = ThriftI64(offsetIndexOffset);
+        chunk.metadata[5] = ThriftI32(offsetIndex.length);
+
+        final columnIndex = chunk.columnIndex;
+        if (columnIndex == null) continue;
+        final bytes = encodeColumnIndex(columnIndex);
+        final columnIndexOffset = _out.length;
+        _out.writeBytes(Bytes.fromUint8List(bytes));
+        chunk.metadata[6] = ThriftI64(columnIndexOffset);
+        chunk.metadata[7] = ThriftI32(bytes.length);
+      }
+    }
+  }
+
+  /// Appends every chunk's Bloom filter and patches `ColumnMetaData` fields
+  /// 14 (offset) and 15 (length).
+  void _writeBloomFilters() {
+    for (final chunks in _rowGroupChunks) {
+      for (final chunk in chunks) {
+        final bytes = chunk.bloomFilter;
+        if (bytes == null) continue;
+        final offset = _out.length;
+        _out.writeBytes(Bytes.fromUint8List(bytes));
+        final columnMetadata = chunk.metadata[3]! as Map<int, Object?>;
+        columnMetadata[14] = ThriftI64(offset);
+        columnMetadata[15] = ThriftI32(bytes.length);
+      }
+    }
   }
 }
 

@@ -150,10 +150,17 @@ ParquetColumn _buildList(
       repeated.children.length != 1) {
     throw ParquetFormatException('LIST repeated group must have one child');
   }
+  final element = repeated.children.first;
+  if (element.repLevel > repeated.repLevel || element.isRepeated) {
+    throw ParquetUnsupportedException(
+      'list of list/nested repetition is not supported in v0.1.2 '
+      '(${node.dotPath})',
+    );
+  }
   return _buildListForRepeated(
     outer: node,
     repeated: repeated,
-    element: repeated.children.first,
+    element: element,
     schema: schema,
     leaves: leaves,
     numRows: numRows,
@@ -275,6 +282,11 @@ ParquetColumn _buildElement(
   int length,
   int repeatedDef,
 ) {
+  if (element.repLevel > repeatedDef) {
+    throw ParquetUnsupportedException(
+      'list of list/nested repetition is not supported in v0.1.2',
+    );
+  }
   if (element.isLeaf) {
     final descriptor = schema.column(element.leafIndex!);
     final decoded = leaves[element.leafIndex!];

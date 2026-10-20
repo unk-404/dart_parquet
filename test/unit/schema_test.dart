@@ -269,10 +269,9 @@ void main() {
         }),
         throwsA(isA<ParquetFormatException>()),
       );
-      expect(
-        () => LogicalType.fromThrift({99: {}}),
-        throwsA(isA<ParquetFormatException>()),
-      );
+      // Unknown union members are annotations; keep reading the physical
+      // column instead of failing the whole file.
+      expect(LogicalType.fromThrift({99: {}}), isA<UnknownLogicalType>());
     });
   });
 

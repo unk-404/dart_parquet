@@ -1,0 +1,13 @@
+{
+ "file": "official/encrypt_columns_and_footer.parquet.encrypted",
+ "kind": "unsupported",
+ "writer_family": "unknown",
+ "pyarrow": {
+  "ok": false,
+  "read_ok": false,
+  "version": "26.0.0",
+  "error": "OSError: Could not read encrypted metadata, no decryption found in reader's properties",
+  "read_error": null
+ },
+ "exception": "ParquetUnsupportedException"
+}

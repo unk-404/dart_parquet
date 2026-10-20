@@ -1,0 +1,51 @@
+{
+ "file": "official/data_index_bloom_encoding_with_length.parquet",
+ "kind": "values",
+ "writer_family": "arrow-rs",
+ "meta": {
+  "rows": 14,
+  "row_groups": 1,
+  "created_by": "parquet-rs version 49.0.0"
+ },
+ "leaves": [
+  {
+   "path": "String",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "String",
+   "dart_class": "BinaryColumn",
+   "length": 14,
+   "null_count": 0,
+   "checksum": "cff8d92493542d74",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    11,
+    12,
+    13
+   ],
+   "samples": [
+    "\"Hello\"",
+    "\"This is\"",
+    "\"a\"",
+    "\"over\"",
+    "\"the lazy\"",
+    "\"dog\""
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

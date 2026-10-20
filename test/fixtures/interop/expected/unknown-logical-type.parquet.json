@@ -1,0 +1,72 @@
+{
+ "file": "official/unknown-logical-type.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 3,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 20.0.0-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "column with known type",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "column with unknown type",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "unknown",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "column with known type",
+   "dart_class": "BinaryColumn",
+   "length": 3,
+   "null_count": 0,
+   "checksum": "2c6a87664a671355",
+   "sample_rows": [
+    0,
+    1,
+    2
+   ],
+   "samples": [
+    "\"known string 1\"",
+    "\"known string 2\"",
+    "\"known string 3\""
+   ]
+  },
+  {
+   "name": "column with unknown type",
+   "dart_class": "BinaryColumn",
+   "length": 3,
+   "null_count": 0,
+   "checksum": "e78ae53b0e092cb7",
+   "sample_rows": [
+    0,
+    1,
+    2
+   ],
+   "samples": [
+    "{\"hex\":\"756e6b6e6f776e20737472696e672031\"}",
+    "{\"hex\":\"756e6b6e6f776e20737472696e672032\"}",
+    "{\"hex\":\"756e6b6e6f776e20737472696e672033\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

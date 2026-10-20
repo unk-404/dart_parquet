@@ -1,0 +1,447 @@
+{
+ "file": "official/alltypes_tiny_pages.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 7300,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.12.0-SNAPSHOT (build 6901a2040848c6b37fa61f4b0a76246445f396db)"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "bool_col",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "tinyint_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "integer",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "smallint_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "integer",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "int_col",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "bigint_col",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_col",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_col",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "date_string_col",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "string_col",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "timestamp_col",
+   "physical": "int96",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "year",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "month",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "id",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "5b513757d4f2c0a3",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "122",
+    "123",
+    "124",
+    "6176",
+    "6175",
+    "6174"
+   ]
+  },
+  {
+   "name": "bool_col",
+   "dart_class": "BooleanColumn",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "9d94fafcb67c3a61",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "true",
+    "false",
+    "true",
+    "true",
+    "false",
+    "true"
+   ]
+  },
+  {
+   "name": "tinyint_col",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "d3515ff3069f7261",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "2",
+    "3",
+    "4",
+    "6",
+    "5",
+    "4"
+   ]
+  },
+  {
+   "name": "smallint_col",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "d3515ff3069f7261",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "2",
+    "3",
+    "4",
+    "6",
+    "5",
+    "4"
+   ]
+  },
+  {
+   "name": "int_col",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "d3515ff3069f7261",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "2",
+    "3",
+    "4",
+    "6",
+    "5",
+    "4"
+   ]
+  },
+  {
+   "name": "bigint_col",
+   "dart_class": "Int64Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "a5b7ff8321dc11b5",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "20",
+    "30",
+    "40",
+    "60",
+    "50",
+    "40"
+   ]
+  },
+  {
+   "name": "float_col",
+   "dart_class": "Float32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "219f7150286f4fd7",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "{\"f32\":\"400ccccd\"}",
+    "{\"f32\":\"40533333\"}",
+    "{\"f32\":\"408ccccd\"}",
+    "{\"f32\":\"40d33333\"}",
+    "{\"f32\":\"40b00000\"}",
+    "{\"f32\":\"408ccccd\"}"
+   ]
+  },
+  {
+   "name": "double_col",
+   "dart_class": "Float64Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "98faa319a676088f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "{\"f64\":\"4034333333333333\"}",
+    "{\"f64\":\"403e4ccccccccccc\"}",
+    "{\"f64\":\"4044333333333333\"}",
+    "{\"f64\":\"404e4ccccccccccc\"}",
+    "{\"f64\":\"4049400000000000\"}",
+    "{\"f64\":\"4044333333333333\"}"
+   ]
+  },
+  {
+   "name": "date_string_col",
+   "dart_class": "BinaryColumn",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "1c07a1eb78467407",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "\"01/13/09\"",
+    "\"01/13/09\"",
+    "\"01/13/09\"",
+    "\"09/10/10\"",
+    "\"09/10/10\"",
+    "\"09/10/10\""
+   ]
+  },
+  {
+   "name": "string_col",
+   "dart_class": "BinaryColumn",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "4ab387f752b3f17d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "\"2\"",
+    "\"3\"",
+    "\"4\"",
+    "\"6\"",
+    "\"5\"",
+    "\"4\""
+   ]
+  },
+  {
+   "name": "timestamp_col",
+   "dart_class": "Int96Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "f6040e575a14e154",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "{\"hex\":\"805cbd63630300003d752500\"}",
+    "{\"hex\":\"80e1355d710300003d752500\"}",
+    "{\"hex\":\"00fd46577f0300003d752500\"}",
+    "{\"hex\":\"00aaf544464d000099772500\"}",
+    "{\"hex\":\"8061b349384d000099772500\"}",
+    "{\"hex\":\"80af094f2a4d000099772500\"}"
+   ]
+  },
+  {
+   "name": "year",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "1f727241db093385",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "2009",
+    "2009",
+    "2009",
+    "2010",
+    "2010",
+    "2010"
+   ]
+  },
+  {
+   "name": "month",
+   "dart_class": "Int32Column",
+   "length": 7300,
+   "null_count": 0,
+   "checksum": "fa189ca9d00206bd",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7297,
+    7298,
+    7299
+   ],
+   "samples": [
+    "1",
+    "1",
+    "1",
+    "9",
+    "9",
+    "9"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,51 @@
+{
+ "file": "official/nulls.snappy.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 8,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.8.2 (build c6522788629e590a53eb79874b95f6c3ff11f16c)"
+ },
+ "leaves": [
+  {
+   "path": "b_struct.b_c_int",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "b_struct",
+   "dart_class": "StructColumn",
+   "length": 8,
+   "null_count": 0,
+   "checksum": "5280760d8500c19d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    5,
+    6,
+    7
+   ],
+   "samples": [
+    "{\"b_c_int\":null}",
+    "{\"b_c_int\":null}",
+    "{\"b_c_int\":null}",
+    "{\"b_c_int\":null}",
+    "{\"b_c_int\":null}",
+    "{\"b_c_int\":null}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "file": "official/nation.dict-malformed.parquet",
+ "kind": "malformed",
+ "writer_family": "parquet-mr",
+ "pyarrow": {
+  "ok": true,
+  "read_ok": true,
+  "version": "26.0.0",
+  "error": null,
+  "read_error": null
+ },
+ "meta": {
+  "rows": 25,
+  "row_groups": 1,
+  "created_by": "parquet-mr"
+ },
+ "leaves": [
+  {
+   "path": "nation_key",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "region_key",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "comment_col",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "exception": "ParquetException"
+}

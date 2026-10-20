@@ -9,7 +9,10 @@ import '../format/enums.dart';
 import '../format/thrift.dart';
 import '../schema/schema.dart';
 import '../util/bytes.dart';
+import '../util/crc32.dart';
+import 'bloom_filter.dart';
 import 'encoders.dart';
+import 'page_index_writer.dart';
 import 'shredder.dart';
 import 'writer_options.dart';
 
@@ -20,6 +23,9 @@ final class ColumnChunkWriteResult {
     required this.metadata,
     required this.totalUncompressedSize,
     required this.totalCompressedSize,
+    required this.pages,
+    this.columnIndex,
+    this.bloomFilter,
   });
 
   /// Thrift `ColumnChunk` map (fields 2 and 3).
@@ -30,6 +36,16 @@ final class ColumnChunkWriteResult {
 
   /// Total compressed chunk size, including page headers.
   final int totalCompressedSize;
+
+  /// Data pages in file order, used to build the page index.
+  final List<PageIndexEntry> pages;
+
+  /// Per-page column index data, or `null` when the column order cannot
+  /// represent the bounds (INT96 / all-NaN pages).
+  final ColumnIndexData? columnIndex;
+
+  /// Serialized Bloom filter (header followed by bitset), or `null`.
+  final Uint8List? bloomFilter;
 }
 
 /// Encodes [leaf]'s pages into [out] and returns its `ColumnChunk` metadata.
@@ -117,6 +133,7 @@ ColumnChunkWriteResult writeLeafChunk(
       uncompressedSize: dictionaryBody.length,
       compressedSize: compressed.length,
       numValues: dictionary.values.length,
+      crc: options.writeCrc ? crc32(compressed.asUint8List()) : null,
     );
     out
       ..writeBytes(header)
@@ -132,6 +149,8 @@ ColumnChunkWriteResult writeLeafChunk(
 
   final dataPageOffset = out.length;
   var dataPageCount = 0;
+  var firstRowIndex = 0;
+  final pages = <PageIndexEntry>[];
   final pageType = options.dataPageVersion == 2
       ? PageType.dataPageV2
       : PageType.dataPage;
@@ -144,7 +163,7 @@ ColumnChunkWriteResult writeLeafChunk(
     final presentEnd = valueOffsets[range.end];
     final pageValues = leaf.values.sublist(presentStart, presentEnd);
     final nullCount = (range.end - range.start) - pageValues.length;
-    final pageStats = options.writeStatistics
+    final pageStats = (options.writeStatistics || options.writePageIndex)
         ? _computeStats(
             pageValues,
             type,
@@ -152,9 +171,10 @@ ColumnChunkWriteResult writeLeafChunk(
             unsigned: _isUnsigned(descriptor),
           )
         : null;
-    final pageStatsMap = pageStats == null
+    final pageStatsMap = pageStats == null || !options.writeStatistics
         ? null
         : _statisticsToThrift(pageStats, type, descriptor);
+    final rowsInPage = _countRows(leaf, range, maxRep);
 
     final Uint8List valueBytes;
     if (dictionary == null) {
@@ -166,6 +186,7 @@ ColumnChunkWriteResult writeLeafChunk(
       );
     }
 
+    final pageOffset = out.length;
     final Bytes header;
     final Uint8List body;
     if (options.dataPageVersion == 2) {
@@ -192,11 +213,12 @@ ColumnChunkWriteResult writeLeafChunk(
         compressedSize: pageBody.length,
         numValues: range.end - range.start,
         numNulls: nullCount,
-        numRows: _countRows(leaf, range, maxRep),
+        numRows: rowsInPage,
         encoding: valueEncoding,
         definitionLevelsByteLength: defBytes.length,
         repetitionLevelsByteLength: repBytes.length,
         statistics: pageStatsMap,
+        crc: options.writeCrc ? crc32(pageBody) : null,
       );
       body = pageBody;
       totalUncompressed +=
@@ -225,20 +247,33 @@ ColumnChunkWriteResult writeLeafChunk(
       writer.writeUint8List(valueBytes);
       final pageBody = writer.bytes.asUint8List();
       final compressed = codec.encode(Bytes.fromUint8List(pageBody));
+      body = compressed.asUint8List();
       header = _dataPageV1Header(
         uncompressedSize: pageBody.length,
-        compressedSize: compressed.length,
+        compressedSize: body.length,
         numValues: range.end - range.start,
         encoding: valueEncoding,
         statistics: pageStatsMap,
+        crc: options.writeCrc ? crc32(body) : null,
       );
-      body = compressed.asUint8List();
       totalUncompressed += header.length + pageBody.length;
       totalCompressed += header.length + body.length;
     }
     out
       ..writeBytes(header)
       ..writeBytes(Bytes.fromUint8List(body));
+    pages.add(
+      PageIndexEntry(
+        offset: pageOffset,
+        compressedSize: header.length + body.length,
+        firstRowIndex: firstRowIndex,
+        nullCount: nullCount,
+        nullPage: pageValues.isEmpty,
+        minValue: pageStats?.min,
+        maxValue: pageStats?.max,
+      ),
+    );
+    firstRowIndex += rowsInPage;
     dataPageCount++;
   }
 
@@ -263,6 +298,13 @@ ColumnChunkWriteResult writeLeafChunk(
     Encoding.rle,
     if (dictionary != null) Encoding.rleDictionary,
   }.toList()..sort((a, b) => a.value.compareTo(b.value));
+
+  final columnIndex = options.writePageIndex
+      ? _buildColumnIndex(pages, descriptor)
+      : null;
+  final bloomFilter = options.writeBloomFilter && leaf.values.isNotEmpty
+      ? _buildBloomFilter(leaf.values, type, options)
+      : null;
 
   final columnMetadata = <int, Object?>{
     1: ThriftI32(type.value),
@@ -289,7 +331,121 @@ ColumnChunkWriteResult writeLeafChunk(
     metadata: chunkMetadata,
     totalUncompressedSize: totalUncompressed,
     totalCompressedSize: totalCompressed,
+    pages: pages,
+    columnIndex: columnIndex,
+    bloomFilter: bloomFilter,
   );
+}
+
+ColumnIndexData? _buildColumnIndex(
+  List<PageIndexEntry> pages,
+  ColumnDescriptor descriptor,
+) {
+  final type = descriptor.physicalType;
+  // INT96 uses TYPE_ORDER column order, for which writers must not emit a
+  // ColumnIndex.
+  if (type == PhysicalType.int96) return null;
+  for (final page in pages) {
+    if (page.nullPage) continue;
+    // All-NaN FLOAT/DOUBLE pages (or any page whose bounds are unavailable)
+    // force the whole ColumnIndex to be omitted.
+    if (page.minValue == null || page.maxValue == null) return null;
+  }
+  return ColumnIndexData(
+    pages: pages,
+    boundaryOrder: _boundaryOrder(pages, descriptor),
+  );
+}
+
+BoundaryOrder _boundaryOrder(
+  List<PageIndexEntry> pages,
+  ColumnDescriptor descriptor,
+) {
+  final comparable = <PageIndexEntry>[
+    for (final page in pages)
+      if (!page.nullPage && page.minValue != null && page.maxValue != null)
+        page,
+  ];
+  if (comparable.length < 2) return BoundaryOrder.unordered;
+  var ascending = true;
+  var descending = true;
+  for (var i = 1; i < comparable.length; i++) {
+    final previous = comparable[i - 1];
+    final current = comparable[i];
+    final minOrder = _compareBounds(
+      descriptor,
+      previous.minValue!,
+      current.minValue!,
+    );
+    final maxOrder = _compareBounds(
+      descriptor,
+      previous.maxValue!,
+      current.maxValue!,
+    );
+    if (minOrder > 0 || maxOrder > 0) ascending = false;
+    if (minOrder < 0 || maxOrder < 0) descending = false;
+  }
+  if (ascending) return BoundaryOrder.ascending;
+  if (descending) return BoundaryOrder.descending;
+  return BoundaryOrder.unordered;
+}
+
+/// Orders two raw statistics values using the column's logical ordering.
+int _compareBounds(ColumnDescriptor descriptor, Uint8List a, Uint8List b) {
+  final unsigned = _isUnsigned(descriptor);
+  switch (descriptor.physicalType) {
+    case PhysicalType.int32:
+      final left = ByteData.sublistView(a).getInt32(0, Endian.little);
+      final right = ByteData.sublistView(b).getInt32(0, Endian.little);
+      return _compareInt32(left, right, unsigned);
+    case PhysicalType.int64:
+      return _compareInt64(_int64FromBounds(a), _int64FromBounds(b), unsigned);
+    case PhysicalType.float:
+      return ByteData.sublistView(a)
+          .getFloat32(0, Endian.little)
+          .compareTo(ByteData.sublistView(b).getFloat32(0, Endian.little));
+    case PhysicalType.double:
+      return ByteData.sublistView(a)
+          .getFloat64(0, Endian.little)
+          .compareTo(ByteData.sublistView(b).getFloat64(0, Endian.little));
+    case PhysicalType.boolean:
+      return a[0].compareTo(b[0]);
+    case PhysicalType.byteArray:
+    case PhysicalType.fixedLenByteArray:
+      return _compareBytes(a, b);
+    case PhysicalType.int96:
+      // INT96 never produces a ColumnIndex.
+      return 0;
+  }
+}
+
+Int64Value _int64FromBounds(Uint8List bytes) {
+  final data = ByteData.sublistView(bytes);
+  return Int64Value(
+    data.getUint32(0, Endian.little),
+    data.getUint32(4, Endian.little),
+  );
+}
+
+Uint8List _buildBloomFilter(
+  List<Object?> values,
+  PhysicalType type,
+  ParquetWriterOptions options,
+) {
+  final filter = ParquetBloomFilter.create(
+    numValues: values.length,
+    fpp: options.bloomFilterFpp,
+    maxBytes: options.bloomFilterMaxBytes,
+  );
+  for (final value in values) {
+    filter.addBytes(_bloomValueBytes(value, type));
+  }
+  return filter.toBytes();
+}
+
+Uint8List _bloomValueBytes(Object? value, PhysicalType type) {
+  if (type == PhysicalType.int96) return value as Uint8List;
+  return encodeStatisticsValue(value, type);
 }
 
 bool _canBreakAt(LeafData leaf, int entry, int maxRep) {
@@ -317,6 +473,7 @@ Bytes _dataPageV1Header({
   required int numValues,
   required Encoding encoding,
   required Map<int, Object?>? statistics,
+  int? crc,
 }) {
   final dataHeader = <int, Object?>{
     1: ThriftI32(numValues),
@@ -330,6 +487,7 @@ Bytes _dataPageV1Header({
     1: ThriftI32(PageType.dataPage.value),
     2: ThriftI32(uncompressedSize),
     3: ThriftI32(compressedSize),
+    if (crc != null) 4: ThriftI32(_signedInt32(crc)),
     5: dataHeader,
   });
   return writer.toBytes();
@@ -345,6 +503,7 @@ Bytes _dataPageV2Header({
   required int definitionLevelsByteLength,
   required int repetitionLevelsByteLength,
   required Map<int, Object?>? statistics,
+  int? crc,
 }) {
   final dataHeader = <int, Object?>{
     1: ThriftI32(numValues),
@@ -361,6 +520,7 @@ Bytes _dataPageV2Header({
     1: ThriftI32(PageType.dataPageV2.value),
     2: ThriftI32(uncompressedSize),
     3: ThriftI32(compressedSize),
+    if (crc != null) 4: ThriftI32(_signedInt32(crc)),
     8: dataHeader,
   });
   return writer.toBytes();
@@ -370,12 +530,14 @@ Bytes _dictionaryPageHeader({
   required int uncompressedSize,
   required int compressedSize,
   required int numValues,
+  int? crc,
 }) {
   final writer = ThriftCompactWriter();
   writer.writeStruct({
     1: ThriftI32(PageType.dictionaryPage.value),
     2: ThriftI32(uncompressedSize),
     3: ThriftI32(compressedSize),
+    if (crc != null) 4: ThriftI32(_signedInt32(crc)),
     7: <int, Object?>{
       1: ThriftI32(numValues),
       2: ThriftI32(Encoding.plain.value),
@@ -586,6 +748,11 @@ int _compareInt32(int a, int b, bool unsigned) {
 /// `value & 0xFFFFFFFF` is avoided because bitwise operators are 32-bit signed
 /// on the web.
 int _unsigned32(int value) => value < 0 ? value + 0x100000000 : value;
+
+/// Converts an unsigned 32-bit value (CRC) to the signed representation that
+/// Thrift's i32 zigzag encoding expects.
+int _signedInt32(int value) =>
+    value >= 0x80000000 ? value - 0x100000000 : value;
 
 int _compareInt64(Int64Value a, Int64Value b, bool unsigned) {
   if (unsigned) {

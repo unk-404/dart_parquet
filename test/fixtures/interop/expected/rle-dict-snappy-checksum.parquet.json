@@ -1,0 +1,84 @@
+{
+ "file": "official/rle-dict-snappy-checksum.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 1000,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.13.0-SNAPSHOT (build 261f7d2679407c833545b56f4c85a4ae8b5c9ed4)"
+ },
+ "leaves": [
+  {
+   "path": "long_field",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "binary_field",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "long_field",
+   "dart_class": "Int64Column",
+   "length": 1000,
+   "null_count": 0,
+   "checksum": "10d2c2aaaafaa5e5",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "name": "binary_field",
+   "dart_class": "BinaryColumn",
+   "length": 1000,
+   "null_count": 0,
+   "checksum": "36446b15a188079d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    997,
+    998,
+    999
+   ],
+   "samples": [
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}",
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}",
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}",
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}",
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}",
+    "{\"hex\":\"63393565323633612d663564342d343031662d383130372d356361373134366131663938\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

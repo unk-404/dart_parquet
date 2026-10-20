@@ -1,0 +1,47 @@
+{
+ "file": "official/int96_timestamp_order.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 4,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.18.0-SNAPSHOT (build 8931c1c55f1fba399dd75139f75bcde0b84137c0)"
+ },
+ "leaves": [
+  {
+   "path": "ts",
+   "physical": "int96",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "ts",
+   "dart_class": "Int96Column",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "0ef847924d7ae897",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "{\"hex\":\"ffff4e91944e00008c3d2500\"}",
+    "{\"hex\":\"00000000000000008d3d2500\"}",
+    "{\"hex\":\"7b00000000000000403b2500\"}",
+    "{\"hex\":\"e8030000000000008c3d2500\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

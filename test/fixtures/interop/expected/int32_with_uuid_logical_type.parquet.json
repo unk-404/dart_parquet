@@ -1,0 +1,51 @@
+{
+ "file": "official/int32_with_uuid_logical_type.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 10,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.18.0-SNAPSHOT (build f954a72714b9a9c858bea8b016bc189deeb501fc)"
+ },
+ "leaves": [
+  {
+   "path": "int32_uuid",
+   "physical": "int32",
+   "type_length": 16,
+   "logical": "uuid",
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "int32_uuid",
+   "dart_class": "Int32Column",
+   "length": 10,
+   "null_count": 0,
+   "checksum": "572fac7655389d18",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    7,
+    8,
+    9
+   ],
+   "samples": [
+    "0",
+    "1",
+    "2",
+    "7",
+    "8",
+    "9"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "file": "official/column_chunk_key_value_metadata.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 0,
+  "row_groups": 1,
+  "created_by": "parquet-cpp-arrow version 17.0.0-SNAPSHOT"
+ },
+ "leaves": [
+  {
+   "path": "column1",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "column2",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "column1",
+   "dart_class": "Int32Column",
+   "length": 0,
+   "null_count": 0,
+   "checksum": "cbf29ce484222325",
+   "sample_rows": [],
+   "samples": []
+  },
+  {
+   "name": "column2",
+   "dart_class": "Int32Column",
+   "length": 0,
+   "null_count": 0,
+   "checksum": "cbf29ce484222325",
+   "sample_rows": [],
+   "samples": []
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

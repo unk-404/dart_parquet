@@ -1,0 +1,579 @@
+{
+ "file": "official/delta_encoding_optional_column.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 100,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.10.0 (build 031a6654009e3b82020012a18434c582bd74c73a)"
+ },
+ "leaves": [
+  {
+   "path": "c_customer_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_current_cdemo_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_current_hdemo_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_current_addr_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_first_shipto_date_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_first_sales_date_sk",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_birth_day",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_birth_month",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_birth_year",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_customer_id",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_salutation",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_first_name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_last_name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_preferred_cust_flag",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_birth_country",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_email_address",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "c_last_review_date",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "c_customer_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 0,
+   "checksum": "2c7c70753d5918a0",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "100",
+    "99",
+    "98",
+    "3",
+    "2",
+    "1"
+   ]
+  },
+  {
+   "name": "c_current_cdemo_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "676810a58d4d57de",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "1254468",
+    "622676",
+    "574977",
+    "1473522",
+    "819667",
+    "980124"
+   ]
+  },
+  {
+   "name": "c_current_hdemo_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 2,
+   "checksum": "3536735f8ddcf4f2",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "6370",
+    "2152",
+    "1615",
+    "6247",
+    "1461",
+    "7135"
+   ]
+  },
+  {
+   "name": "c_current_addr_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 0,
+   "checksum": "1adf33af243b1cec",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "6672",
+    "17228",
+    "43853",
+    "48572",
+    "31655",
+    "32946"
+   ]
+  },
+  {
+   "name": "c_first_shipto_date_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 1,
+   "checksum": "bc12dcdd7f0d99d4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "2449148",
+    "2451687",
+    "2450894",
+    "2449130",
+    "2452318",
+    "2452238"
+   ]
+  },
+  {
+   "name": "c_first_sales_date_sk",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 1,
+   "checksum": "acbff772860c8f95",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "2449118",
+    "2451657",
+    "2450864",
+    "2449100",
+    "2452288",
+    "2452208"
+   ]
+  },
+  {
+   "name": "c_birth_day",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "ac44d02fc00c040e",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "13",
+    "9",
+    "23",
+    "18",
+    "9",
+    "9"
+   ]
+  },
+  {
+   "name": "c_birth_month",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "c4c4ce661dda51fa",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "7",
+    "12",
+    "6",
+    "9",
+    "4",
+    "12"
+   ]
+  },
+  {
+   "name": "c_birth_year",
+   "dart_class": "Int64Column",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "ae9cc4acfa756767",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "1958",
+    "1961",
+    "1965",
+    "1979",
+    "1966",
+    "1936"
+   ]
+  },
+  {
+   "name": "c_customer_id",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 0,
+   "checksum": "cbf84853a8afb76b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"AAAAAAAAEGAAAAAA\"",
+    "\"AAAAAAAADGAAAAAA\"",
+    "\"AAAAAAAACGAAAAAA\"",
+    "\"AAAAAAAADAAAAAAA\"",
+    "\"AAAAAAAACAAAAAAA\"",
+    "\"AAAAAAAABAAAAAAA\""
+   ]
+  },
+  {
+   "name": "c_salutation",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "c3866d800d67ae2f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"Ms.\"",
+    "\"Sir\"",
+    "\"Dr.\"",
+    "\"Miss\"",
+    "\"Dr.\"",
+    "\"Mr.\""
+   ]
+  },
+  {
+   "name": "c_first_name",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "ce64f0de2ca2ee4f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"Jeannette\"",
+    "\"Austin\"",
+    "\"David\"",
+    "\"Latisha\"",
+    "\"Amy\"",
+    "\"Javier\""
+   ]
+  },
+  {
+   "name": "c_last_name",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 1,
+   "checksum": "6958cbe54f8d2c5a",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"Johnson\"",
+    "\"Tran\"",
+    "\"Lewis\"",
+    "\"Hamilton\"",
+    "\"Moses\"",
+    "\"Lewis\""
+   ]
+  },
+  {
+   "name": "c_preferred_cust_flag",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 4,
+   "checksum": "78195dc0bf4d7457",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"Y\"",
+    "\"Y\"",
+    "\"N\"",
+    "\"N\"",
+    "\"Y\"",
+    "\"Y\""
+   ]
+  },
+  {
+   "name": "c_birth_country",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 4,
+   "checksum": "6dfe43da9c2122e8",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"BANGLADESH\"",
+    "\"NAMIBIA\"",
+    "\"KIRIBATI\"",
+    "\"NIUE\"",
+    "\"TOGO\"",
+    "\"CHILE\""
+   ]
+  },
+  {
+   "name": "c_email_address",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "265c806ccad1957b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"Jeannette.Johnson@8BvSqgp.com\"",
+    "\"Austin.Tran@ect7cnjLsucbd.edu\"",
+    "\"David.Lewis@5mhvq.org\"",
+    "\"Latisha.Hamilton@V.com\"",
+    "\"Amy.Moses@Ovk9KjHH.com\"",
+    "\"Javier.Lewis@VFAxlnZEvOx.org\""
+   ]
+  },
+  {
+   "name": "c_last_review_date",
+   "dart_class": "BinaryColumn",
+   "length": 100,
+   "null_count": 3,
+   "checksum": "c961a530b277a28f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    97,
+    98,
+    99
+   ],
+   "samples": [
+    "\"2452635\"",
+    "\"2452437\"",
+    "\"2452558\"",
+    "\"2452313\"",
+    "\"2452318\"",
+    "\"2452508\""
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

@@ -1,0 +1,500 @@
+{
+ "file": "generated/pyarrow_multi_rowgroup.parquet",
+ "kind": "values",
+ "writer_family": "arrow-cpp",
+ "meta": {
+  "rows": 11,
+  "row_groups": 4,
+  "created_by": "parquet-cpp-arrow version 26.0.0"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int64",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "name",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "score",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "flag",
+   "physical": "boolean",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "ts",
+   "physical": "int64",
+   "type_length": null,
+   "logical": "timestamp",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "d",
+   "physical": "int32",
+   "type_length": null,
+   "logical": "date",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "dec",
+   "physical": "fixedLenByteArray",
+   "type_length": 5,
+   "logical": "decimal",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": 2,
+   "precision": 10
+  },
+  {
+   "path": "fx",
+   "physical": "fixedLenByteArray",
+   "type_length": 4,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "bin",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "hf",
+   "physical": "fixedLenByteArray",
+   "type_length": 2,
+   "logical": "float16",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "lst.list.element",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "st.a",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "st.b",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 2,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "mp.key_value.key",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 2,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "mp.key_value.value",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 1,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "u",
+   "physical": "fixedLenByteArray",
+   "type_length": 16,
+   "logical": "uuid",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "columns": [
+  {
+   "name": "id",
+   "dart_class": "Int64Column",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "7920624014fb2cdd",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "10",
+    "11",
+    "17",
+    "18",
+    "19"
+   ]
+  },
+  {
+   "name": "name",
+   "dart_class": "BinaryColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "b8d9212b0026607b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "\"alpha\"",
+    "\"beta\"",
+    "\"theta\"",
+    "\"iota\"",
+    "\"kappa\""
+   ]
+  },
+  {
+   "name": "score",
+   "dart_class": "Float64Column",
+   "length": 11,
+   "null_count": 0,
+   "checksum": "ade54daff3268e8f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "{\"f64\":\"0000000000000000\"}",
+    "{\"f64\":\"8000000000000000\"}",
+    "{\"f64\":\"3ff8000000000000\"}",
+    "{\"f64\":\"4000000000000000\"}",
+    "{\"f64\":\"4008000000000000\"}",
+    "{\"f64\":\"4010000000000000\"}"
+   ]
+  },
+  {
+   "name": "flag",
+   "dart_class": "BooleanColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "3d98eea09015cd7b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "true",
+    "false",
+    "false",
+    "true",
+    "false"
+   ]
+  },
+  {
+   "name": "ts",
+   "dart_class": "Int64Column",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "5295b275571b276e",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "17000123",
+    "3617000123",
+    "25217000123",
+    "28817000123",
+    "32417000123"
+   ]
+  },
+  {
+   "name": "d",
+   "dart_class": "Int32Column",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "1f5959c84a8a7627",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "0",
+    "100",
+    "700",
+    "800",
+    "900"
+   ]
+  },
+  {
+   "name": "dec",
+   "dart_class": "FixedLenColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "d09c6bdf79c9ca4f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"ffffff9e3f\"}",
+    "{\"hex\":\"ffffffc54f\"}",
+    "{\"hex\":\"000000afe1\"}",
+    "{\"hex\":\"000000d6f1\"}",
+    "{\"hex\":\"000000fe01\"}"
+   ]
+  },
+  {
+   "name": "fx",
+   "dart_class": "FixedLenColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "a23c2bb2a717e998",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"00010203\"}",
+    "{\"hex\":\"01020304\"}",
+    "{\"hex\":\"0708090a\"}",
+    "{\"hex\":\"08090a0b\"}",
+    "{\"hex\":\"090a0b0c\"}"
+   ]
+  },
+  {
+   "name": "bin",
+   "dart_class": "BinaryColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "9e229ff615bd52c1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"00ff00\"}",
+    "{\"hex\":\"00ff01\"}",
+    "{\"hex\":\"00ff07\"}",
+    "{\"hex\":\"00ff08\"}",
+    "{\"hex\":\"00ff09\"}"
+   ]
+  },
+  {
+   "name": "hf",
+   "dart_class": "FixedLenColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "24da2168baceacd7",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"0000\"}",
+    "{\"hex\":\"0038\"}",
+    "{\"hex\":\"0043\"}",
+    "{\"hex\":\"0044\"}",
+    "{\"hex\":\"8044\"}"
+   ]
+  },
+  {
+   "name": "lst",
+   "dart_class": "ListColumn",
+   "length": 11,
+   "null_count": 3,
+   "checksum": "6a5817241b031438",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "[]",
+    "[1]",
+    "null",
+    "[7,8]",
+    "[9]"
+   ]
+  },
+  {
+   "name": "st",
+   "dart_class": "StructColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "6eddb5c2241c62b2",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"a\":0,\"b\":null}",
+    "{\"a\":1,\"b\":\"s1\"}",
+    "{\"a\":7,\"b\":\"s7\"}",
+    "{\"a\":8,\"b\":\"s8\"}",
+    "{\"a\":9,\"b\":null}"
+   ]
+  },
+  {
+   "name": "mp",
+   "dart_class": "MapColumn",
+   "length": 11,
+   "null_count": 2,
+   "checksum": "328eb256d424d2d9",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "[]",
+    "[[\"a\",1]]",
+    "[[\"f\",7]]",
+    "[[\"g\",8]]",
+    "[[\"h\",9]]"
+   ]
+  },
+  {
+   "name": "u",
+   "dart_class": "FixedLenColumn",
+   "length": 11,
+   "null_count": 1,
+   "checksum": "801a6bdd7feade4d",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    8,
+    9,
+    10
+   ],
+   "samples": [
+    "null",
+    "{\"hex\":\"00000000000000000000000000000000\"}",
+    "{\"hex\":\"00000000000000000000000000000001\"}",
+    "{\"hex\":\"00000000000000000000000000000007\"}",
+    "{\"hex\":\"00000000000000000000000000000008\"}",
+    "{\"hex\":\"00000000000000000000000000000009\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}

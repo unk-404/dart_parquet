@@ -1,0 +1,51 @@
+{
+ "file": "official/fixed_length_decimal_legacy.parquet",
+ "kind": "values",
+ "writer_family": "parquet-mr",
+ "meta": {
+  "rows": 24,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.8.2 (build c6522788629e590a53eb79874b95f6c3ff11f16c)"
+ },
+ "leaves": [
+  {
+   "path": "value",
+   "physical": "fixedLenByteArray",
+   "type_length": 6,
+   "logical": "decimal",
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": 2,
+   "precision": 13
+  }
+ ],
+ "columns": [
+  {
+   "name": "value",
+   "dart_class": "FixedLenColumn",
+   "length": 24,
+   "null_count": 0,
+   "checksum": "a991eec61b53b445",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    21,
+    22,
+    23
+   ],
+   "samples": [
+    "{\"hex\":\"000000000064\"}",
+    "{\"hex\":\"0000000000c8\"}",
+    "{\"hex\":\"00000000012c\"}",
+    "{\"hex\":\"000000000898\"}",
+    "{\"hex\":\"0000000008fc\"}",
+    "{\"hex\":\"000000000960\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
+}
