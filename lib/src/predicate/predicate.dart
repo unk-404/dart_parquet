@@ -214,6 +214,9 @@ int? _compareValues(Object? a, Object? b) {
   if (b is _Int64Value && a is int) {
     return _Int64Value.fromInt(a).compareTo(b);
   }
+  if (a is BigInt && b is BigInt) return a.compareTo(b);
+  if (a is BigInt && b is int) return a.compareTo(BigInt.from(b));
+  if (a is int && b is BigInt) return BigInt.from(a).compareTo(b);
   if (a is num && b is num) return a.compareTo(b);
   if (a is String && b is String) return a.compareTo(b);
   if (a is bool && b is bool) {
