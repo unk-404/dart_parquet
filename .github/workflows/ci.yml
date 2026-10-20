@@ -23,8 +23,12 @@ jobs:
         with:
           sdk: 3.13.5
       - run: dart pub get
-      - run: dart analyze
-      - run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        if: matrix.os == 'ubuntu-latest'
+        run: dart analyze
+      - name: Format check
+        if: matrix.os == 'ubuntu-latest'
+        run: dart format --output=none --set-exit-if-changed .
       - run: dart test
       - name: Chrome tests
         if: matrix.os == 'ubuntu-latest'
