@@ -72,6 +72,7 @@ jobs:
         uses: unk-404/benchcat@master
         with:
           config: benchcat.toml
+          format: benchmark_test
           out: assets/benchmarks.svg
       - name: Verify chart
         run: |

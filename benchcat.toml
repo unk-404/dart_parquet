@@ -14,13 +14,11 @@ max_rows = 12
 [[series]]
 label = "JIT"
 input = "build/bench/jit.jsonl"
-format = "benchmark_test"
 color = "#7FD1B9"
 
 [[series]]
 label = "AOT"
 input = "build/bench/aot.jsonl"
-format = "benchmark_test"
 color = "#8CB8F0"
 
 [[row]]
