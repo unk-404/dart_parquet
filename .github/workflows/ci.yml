@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.13.5
+      - run: dart pub get
+      - run: dart analyze
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart test
+      - name: Chrome tests
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: >-
+          dart test -p chrome
+          test/unit/compression_test.dart
+          test/unit/encodings_test.dart
+          test/web
+      - name: Wasm tests
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: dart test -p chrome -c dart2wasm test/web
+
+  benchmark:
+    name: benchmark
+    needs: test
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: parquet-benchmark-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.13.5
+      - run: dart pub get
+      - name: JIT benchmarks
+        run: |
+          mkdir -p build/bench
+          dart run benchmark_test --output jsonl --compile jit benchmark/parquet_bench_test.dart > build/bench/jit.raw.jsonl
+          grep '^{' build/bench/jit.raw.jsonl > build/bench/jit.jsonl
+      - name: AOT benchmarks
+        run: |
+          dart run benchmark_test --output jsonl --compile aot benchmark/parquet_bench_test.dart > build/bench/aot.raw.jsonl
+          grep '^{' build/bench/aot.raw.jsonl > build/bench/aot.jsonl
+      - name: Render chart
+        uses: unk-404/benchcat@master
+        with:
+          config: benchcat.toml
+          out: assets/benchmarks.svg
+      - name: Verify chart
+        run: |
+          test -s assets/benchmarks.svg
+          head -c 5 assets/benchmarks.svg
+      - name: Upload raw results
+        uses: actions/upload-artifact@v4
+        with:
+          name: parquet-benchmark-jsonl
+          path: build/bench/*.jsonl
+      - name: Commit chart when changed
+        run: |
+          git diff --quiet -- assets/benchmarks.svg && exit 0
+          git config pull.rebase true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/benchmarks.svg
+          git commit -m "chore(bench): refresh chart [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}

@@ -1,8 +1,32 @@
-/// Support for doing something awesome.
+/// Pure Dart Apache Parquet reader with VM and Web support.
 ///
-/// More dartdocs go here.
+/// ```dart
+/// import 'dart:io';
+/// import 'package:parquet/parquet.dart';
+///
+/// final bytes = File('data.parquet').readAsBytesSync();
+/// final reader = ParquetReader.fromBytes(bytes);
+/// final table = reader.readTableSync();
+/// print(table['name'].value(0));
+/// ```
 library;
 
-export 'src/parquet_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/format/enums.dart'
+    show
+        BoundaryOrder,
+        CompressionType,
+        ConvertedType,
+        Encoding,
+        FieldRepetitionType,
+        PageType,
+        PhysicalType;
+export 'src/format/logical_type.dart';
+export 'src/io/io.dart';
+export 'src/io/source.dart';
+export 'src/metadata/metadata.dart';
+export 'src/reader.dart';
+export 'src/schema/schema.dart';
+export 'src/table/column.dart';
+export 'src/table/table.dart';
+export 'src/util/bytes.dart' show Bytes, Uint64;
+export 'src/util/errors.dart';

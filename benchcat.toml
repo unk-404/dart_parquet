@@ -1,0 +1,72 @@
+[font]
+family = ["mplus-rounded"]
+enable_guaranteed_font = false
+enable_system_font = false
+
+[render]
+title = "parquet-dart benchmarks"
+subtitle = "{platform|local} · Dart {tool_version} · commit {commit}"
+footer = "Generated from {rows} rows"
+width = 920
+theme = "pastel"
+max_rows = 12
+
+[[series]]
+label = "JIT"
+input = "build/bench/jit.jsonl"
+format = "benchmark_test"
+color = "#7FD1B9"
+
+[[series]]
+label = "AOT"
+input = "build/bench/aot.jsonl"
+format = "benchmark_test"
+color = "#8CB8F0"
+
+[[row]]
+id = "read read.flat.snappy"
+label = "Flat read · Snappy"
+value = "value * 3.6983"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.zstd"
+label = "Flat read · Zstd"
+value = "value * 3.6983"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.brotli"
+label = "Flat read · Brotli"
+value = "value * 3.6983"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.lz4"
+label = "Flat read · LZ4_RAW"
+value = "value * 3.6983"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.flat.snappy.projection.i64"
+label = "Projection · i64"
+value = "value * 0.76294"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.nested.snappy"
+label = "Nested read · Snappy"
+value = "value * 0.69704"
+unit = "MiB/s"
+group = "Read"
+
+[[row]]
+id = "read read.metadata.snappy"
+label = "Metadata parse"
+unit = "ops/s"
+group = "Metadata"

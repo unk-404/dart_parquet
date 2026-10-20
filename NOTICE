@@ -1,0 +1,23 @@
+# NOTICE
+
+This package is an independent implementation of the Apache Parquet file
+format. It is not an Apache Software Foundation project.
+
+## Test fixtures
+
+The files under `test/fixtures/` were generated with pyarrow (Apache Arrow,
+Apache License 2.0) for conformance and interoperability testing. They contain
+only generated data; no Arrow source code is included.
+
+## Runtime dependencies
+
+- blit (MIT)
+- snappy_neo (BSD-3-Clause)
+- zstd_neo (MIT)
+- brotli_neo (MIT)
+- lzo_neo (MIT)
+- dart_lz4 (Apache-2.0)
+- just_deflate (BSD-3-Clause)
+
+Each dependency retains its own license and copyright; see the corresponding
+pub.dev package for details.
