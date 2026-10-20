@@ -17,7 +17,7 @@ OPFS, IndexedDB, browser `Blob`/`File` and HTTP Range sources.
 
 ```yaml
 dependencies:
-  parquet: ^0.1.2
+  parquet: ^0.1.3
 ```
 
 ```sh
@@ -198,6 +198,10 @@ fixtures and operations: full scans, projection, nested data, metadata parsing,
 writes and multi-isolate/multi-thread variants. The harness lives in
 [`benchmark/`](benchmark/); the Rust counterpart is in
 [`benchmark/rust`](benchmark/rust) and is pinned to `parquet = "=60.0.0"`.
+
+v0.1.3 adds zero-copy fast paths for fully-valid flat columns and direct
+column-to-page writing for large flat tables, while keeping the public API and
+small-table defaults unchanged.
 
 ## Development
 

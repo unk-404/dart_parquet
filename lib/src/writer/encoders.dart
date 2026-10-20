@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import '../encodings/bitpacking.dart' show requiredBits;
 import '../format/enums.dart';
+import '../table/column.dart';
 import '../util/bytes.dart';
 import '../util/errors.dart';
 
@@ -41,6 +42,109 @@ final class Int64Value {
 
 /// Bit width required to encode dictionary indices `0..maxValue`.
 int dictionaryBitWidth(int maxValue) => requiredBits(maxValue);
+
+/// Encodes the repeated level [value] [count] times in the RLE hybrid form.
+///
+/// A flat all-valid page has one long run of the same definition level, so
+/// this avoids materialising and scanning a level array.
+Uint8List encodeRleConstant(int count, int value, int bitWidth) {
+  if (count <= 0 || bitWidth == 0) return Uint8List(0);
+  final out = ByteWriter();
+  out.writeVarint32(count << 1);
+  final byteWidth = (bitWidth + 7) >> 3;
+  for (var b = 0; b < byteWidth; b++) {
+    out.writeUint8((value >> (8 * b)) & 0xFF);
+  }
+  return out.bytes.asUint8List();
+}
+
+/// Encodes values [start, end) of a flat typed column as PLAIN.
+///
+/// Fixed-width columns can be written straight from their typed storage,
+/// without boxing every value into a list first.
+Uint8List encodePlainColumn(
+  ParquetColumn column,
+  int start,
+  int end, {
+  required PhysicalType type,
+  int? typeLength,
+}) {
+  final n = end - start;
+  switch (type) {
+    case PhysicalType.boolean:
+      final bits = Uint8List((n + 7) >> 3);
+      final values = (column as BooleanColumn).getBool;
+      for (var i = 0; i < n; i++) {
+        if (values(start + i)) bits[i >> 3] |= 1 << (i & 7);
+      }
+      return bits;
+    case PhysicalType.int32:
+      final values = (column as Int32Column).values;
+      final out = Uint8List(n * 4);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setInt32(i * 4, values[start + i], Endian.little);
+      }
+      return out;
+    case PhysicalType.int64:
+      final values = (column as Int64Column).values;
+      final out = Uint8List(n * 8);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        final limbs = values.getLimbs(start + i);
+        data.setUint32(i * 8, limbs.$1, Endian.little);
+        data.setUint32(i * 8 + 4, limbs.$2, Endian.little);
+      }
+      return out;
+    case PhysicalType.float:
+      final values = (column as Float32Column).values;
+      final out = Uint8List(n * 4);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setFloat32(i * 4, values[start + i], Endian.little);
+      }
+      return out;
+    case PhysicalType.double:
+      final values = (column as Float64Column).values;
+      final out = Uint8List(n * 8);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setFloat64(i * 8, values[start + i], Endian.little);
+      }
+      return out;
+    case PhysicalType.int96:
+      final values = (column as Int96Column).data;
+      return Uint8List.sublistView(values, start * 12, end * 12);
+    case PhysicalType.fixedLenByteArray:
+      final width = typeLength;
+      if (width == null || width <= 0) {
+        throw ParquetFormatException(
+          'FIXED_LEN_BYTE_ARRAY requires a positive type_length',
+        );
+      }
+      final values = (column as FixedLenColumn).data;
+      return Uint8List.sublistView(values, start * width, end * width);
+    case PhysicalType.byteArray:
+      final binary = column as BinaryColumn;
+      var total = 0;
+      for (var i = start; i < end; i++) {
+        total += 4 + binary.offsets[i + 1] - binary.offsets[i];
+      }
+      final out = Uint8List(total);
+      final data = ByteData.sublistView(out);
+      var pos = 0;
+      for (var i = start; i < end; i++) {
+        final valueStart = binary.offsets[i];
+        final valueEnd = binary.offsets[i + 1];
+        final length = valueEnd - valueStart;
+        data.setUint32(pos, length, Endian.little);
+        pos += 4;
+        out.setRange(pos, pos + length, binary.data, valueStart);
+        pos += length;
+      }
+      return out;
+  }
+}
 
 /// Encodes [values] with the Parquet RLE / bit-packed hybrid encoding.
 ///
@@ -149,66 +253,70 @@ Uint8List encodePlainValues(
   PhysicalType type, {
   int? typeLength,
 }) {
-  final out = ByteWriter();
+  final n = values.length;
   switch (type) {
     case PhysicalType.boolean:
-      final bits = Uint8List((values.length + 7) >> 3);
-      for (var i = 0; i < values.length; i++) {
+      final bits = Uint8List((n + 7) >> 3);
+      for (var i = 0; i < n; i++) {
         if (values[i] as bool) bits[i >> 3] |= 1 << (i & 7);
       }
-      out.writeUint8List(bits);
+      return bits;
     case PhysicalType.int32:
-      for (final value in values) {
-        final v = value as int;
-        out
-          ..writeUint8(v & 0xFF)
-          ..writeUint8((v >> 8) & 0xFF)
-          ..writeUint8((v >> 16) & 0xFF)
-          ..writeUint8((v >> 24) & 0xFF);
+      final out = Uint8List(n * 4);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setInt32(i * 4, values[i] as int, Endian.little);
       }
+      return out;
     case PhysicalType.int64:
-      for (final value in values) {
-        final v = value as Int64Value;
-        out
-          ..writeUint8(v.lo & 0xFF)
-          ..writeUint8((v.lo >> 8) & 0xFF)
-          ..writeUint8((v.lo >> 16) & 0xFF)
-          ..writeUint8((v.lo >> 24) & 0xFF)
-          ..writeUint8(v.hi & 0xFF)
-          ..writeUint8((v.hi >> 8) & 0xFF)
-          ..writeUint8((v.hi >> 16) & 0xFF)
-          ..writeUint8((v.hi >> 24) & 0xFF);
+      final out = Uint8List(n * 8);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        final v = values[i] as Int64Value;
+        data.setUint32(i * 8, v.lo, Endian.little);
+        data.setUint32(i * 8 + 4, v.hi, Endian.little);
       }
+      return out;
     case PhysicalType.int96:
-      for (final value in values) {
-        final v = value as Uint8List;
+      final out = Uint8List(n * 12);
+      for (var i = 0; i < n; i++) {
+        final v = values[i] as Uint8List;
         if (v.length != 12) {
           throw ArgumentError.value(v.length, 'INT96 length', 'expected 12');
         }
-        out.writeUint8List(v);
+        out.setRange(i * 12, i * 12 + 12, v);
       }
+      return out;
     case PhysicalType.float:
-      final data = ByteData(4);
-      for (final value in values) {
-        data.setFloat32(0, value as double, Endian.little);
-        out.writeUint8List(data.buffer.asUint8List());
+      final out = Uint8List(n * 4);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setFloat32(i * 4, values[i] as double, Endian.little);
       }
+      return out;
     case PhysicalType.double:
-      final data = ByteData(8);
-      for (final value in values) {
-        data.setFloat64(0, value as double, Endian.little);
-        out.writeUint8List(data.buffer.asUint8List());
+      final out = Uint8List(n * 8);
+      final data = ByteData.sublistView(out);
+      for (var i = 0; i < n; i++) {
+        data.setFloat64(i * 8, values[i] as double, Endian.little);
       }
+      return out;
     case PhysicalType.byteArray:
-      for (final value in values) {
-        final v = value as Uint8List;
-        out
-          ..writeUint8(v.length & 0xFF)
-          ..writeUint8((v.length >> 8) & 0xFF)
-          ..writeUint8((v.length >> 16) & 0xFF)
-          ..writeUint8((v.length >> 24) & 0xFF)
-          ..writeUint8List(v);
+      var total = 0;
+      for (var i = 0; i < n; i++) {
+        total += 4 + (values[i] as Uint8List).length;
       }
+      final out = Uint8List(total);
+      final data = ByteData.sublistView(out);
+      var pos = 0;
+      for (var i = 0; i < n; i++) {
+        final v = values[i] as Uint8List;
+        data.setUint32(pos, v.length, Endian.little);
+        pos += 4;
+        out.setRange(pos, pos + v.length, v);
+        pos += v.length;
+      }
+      return out;
     case PhysicalType.fixedLenByteArray:
       final width = typeLength;
       if (width == null || width <= 0) {
@@ -216,17 +324,20 @@ Uint8List encodePlainValues(
           'FIXED_LEN_BYTE_ARRAY requires a positive type_length',
         );
       }
-      for (final value in values) {
-        final v = value as Uint8List;
+      final out = Uint8List(n * width);
+      var pos = 0;
+      for (var i = 0; i < n; i++) {
+        final v = values[i] as Uint8List;
         if (v.length != width) {
           throw ArgumentError(
             'FIXED_LEN_BYTE_ARRAY value has ${v.length} bytes, expected $width',
           );
         }
-        out.writeUint8List(v);
+        out.setRange(pos, pos + width, v);
+        pos += width;
       }
+      return out;
   }
-  return out.bytes.asUint8List();
 }
 
 /// Encodes a dictionary index stream: one bit-width byte plus an RLE /

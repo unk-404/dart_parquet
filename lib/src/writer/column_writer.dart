@@ -8,6 +8,7 @@ import '../encodings/bitpacking.dart' show requiredBits;
 import '../format/enums.dart';
 import '../format/thrift.dart';
 import '../schema/schema.dart';
+import '../table/column.dart';
 import '../util/bytes.dart';
 import '../util/crc32.dart';
 import 'bloom_filter.dart';
@@ -73,13 +74,21 @@ ColumnChunkWriteResult writeLeafChunk(
   final defBits = requiredBits(maxDef);
   final repBits = requiredBits(maxRep);
   final entries = leaf.numEntries;
+  final source = leaf.sourceColumn;
+  final allPresent = leaf.allPresent;
 
   // Value slot for every entry: present values are those at the leaf's max
-  // definition level.
-  final valueOffsets = List<int>.filled(entries + 1, 0);
-  for (var i = 0; i < entries; i++) {
-    final present = maxDef == 0 || leaf.defs[i] == maxDef;
-    valueOffsets[i + 1] = valueOffsets[i] + (present ? 1 : 0);
+  // definition level. A flat all-valid page has the identity mapping.
+  final List<int>? valueOffsets;
+  if (allPresent) {
+    valueOffsets = null;
+  } else {
+    final offsets = List<int>.filled(entries + 1, 0);
+    for (var i = 0; i < entries; i++) {
+      final present = maxDef == 0 || leaf.defs[i] == maxDef;
+      offsets[i + 1] = offsets[i] + (present ? 1 : 0);
+    }
+    valueOffsets = offsets;
   }
 
   final levelEstimate =
@@ -90,17 +99,29 @@ ColumnChunkWriteResult writeLeafChunk(
       : (dictionary.bitWidth + 7) >> 3;
 
   final ranges = <_PageRange>[];
+  final fixedSize = _plainFixedSize(type, typeLength);
   if (entries == 0) {
     ranges.add(const _PageRange(0, 0));
+  } else if (source != null && maxRep == 0) {
+    final perPage = fixedSize != null
+        ? options.pageSize ~/ fixedSize
+        : options.pageSize ~/
+              _averageValueSize(source, entries, type, typeLength);
+    final step = perPage < 1 ? 1 : perPage;
+    for (var start = 0; start < entries; start += step) {
+      final end = start + step < entries ? start + step : entries;
+      ranges.add(_PageRange(start, end));
+    }
   } else {
     var start = 0;
     var estimate = 0;
     for (var i = 0; i < entries; i++) {
       estimate += levelEstimate;
-      final present = maxDef == 0 || leaf.defs[i] == maxDef;
+      final present = allPresent || maxDef == 0 || leaf.defs[i] == maxDef;
       if (present) {
+        final valueIndex = allPresent ? i : valueOffsets![i];
         estimate += dictionary == null
-            ? plainValueSize(leaf.values[valueOffsets[i]], type)
+            ? plainValueSize(leaf.values[valueIndex], type)
             : (dictValueEstimate == 0 ? 1 : dictValueEstimate);
       }
       final next = i + 1;
@@ -158,32 +179,48 @@ ColumnChunkWriteResult writeLeafChunk(
       ? Encoding.rleDictionary
       : Encoding.plain;
 
+  final pageStatsList = <_ColumnStatistics>[];
   for (final range in ranges) {
-    final presentStart = valueOffsets[range.start];
-    final presentEnd = valueOffsets[range.end];
-    final pageValues = leaf.values.sublist(presentStart, presentEnd);
-    final nullCount = (range.end - range.start) - pageValues.length;
-    final pageStats = (options.writeStatistics || options.writePageIndex)
-        ? _computeStats(
-            pageValues,
-            type,
-            nullCount: nullCount,
-            unsigned: _isUnsigned(descriptor),
-          )
+    final presentStart = allPresent ? range.start : valueOffsets![range.start];
+    final presentEnd = allPresent ? range.end : valueOffsets![range.end];
+    final pageValues = source == null
+        ? leaf.values.sublist(presentStart, presentEnd)
         : null;
+    final nullCount = allPresent
+        ? 0
+        : (range.end - range.start) - pageValues!.length;
+    final pageStats = (options.writeStatistics || options.writePageIndex)
+        ? source != null
+              ? _computeColumnStats(source, range.start, range.end, descriptor)
+              : _computeStats(
+                  pageValues!,
+                  type,
+                  nullCount: nullCount,
+                  unsigned: _isUnsigned(descriptor),
+                )
+        : null;
+    if (pageStats != null) pageStatsList.add(pageStats);
     final pageStatsMap = pageStats == null || !options.writeStatistics
         ? null
         : _statisticsToThrift(pageStats, type, descriptor);
     final rowsInPage = _countRows(leaf, range, maxRep);
 
     final Uint8List valueBytes;
-    if (dictionary == null) {
-      valueBytes = encodePlainValues(pageValues, type, typeLength: typeLength);
-    } else {
+    if (dictionary != null) {
       valueBytes = encodeDictionaryIndices(
         indices!.sublist(presentStart, presentEnd),
         dictionary.bitWidth,
       );
+    } else if (source != null) {
+      valueBytes = encodePlainColumn(
+        source,
+        range.start,
+        range.end,
+        type: type,
+        typeLength: typeLength,
+      );
+    } else {
+      valueBytes = encodePlainValues(pageValues!, type, typeLength: typeLength);
     }
 
     final pageOffset = out.length;
@@ -196,12 +233,14 @@ ColumnChunkWriteResult writeLeafChunk(
               repBits,
             )
           : Uint8List(0);
-      final defBytes = maxDef > 0
-          ? encodeRleBitPacked(
+      final defBytes = maxDef == 0
+          ? Uint8List(0)
+          : allPresent
+          ? encodeRleConstant(range.end - range.start, maxDef, defBits)
+          : encodeRleBitPacked(
               leaf.defs.sublist(range.start, range.end),
               defBits,
-            )
-          : Uint8List(0);
+            );
       final compressedValues = codec.encode(Bytes.fromUint8List(valueBytes));
       final writer = ByteWriter()
         ..writeUint8List(repBytes)
@@ -236,10 +275,12 @@ ColumnChunkWriteResult writeLeafChunk(
           ..writeUint8List(repBytes);
       }
       if (maxDef > 0) {
-        final defBytes = encodeRleBitPacked(
-          leaf.defs.sublist(range.start, range.end),
-          defBits,
-        );
+        final defBytes = allPresent
+            ? encodeRleConstant(range.end - range.start, maxDef, defBits)
+            : encodeRleBitPacked(
+                leaf.defs.sublist(range.start, range.end),
+                defBits,
+              );
         writer
           ..writeUint32LE(defBytes.length)
           ..writeUint8List(defBytes);
@@ -268,7 +309,7 @@ ColumnChunkWriteResult writeLeafChunk(
         compressedSize: header.length + body.length,
         firstRowIndex: firstRowIndex,
         nullCount: nullCount,
-        nullPage: pageValues.isEmpty,
+        nullPage: source == null && pageValues!.isEmpty,
         minValue: pageStats?.min,
         maxValue: pageStats?.max,
       ),
@@ -284,11 +325,10 @@ ColumnChunkWriteResult writeLeafChunk(
   });
 
   final chunkStats = options.writeStatistics
-      ? _computeStats(
-          leaf.values,
-          type,
-          nullCount: entries - leaf.values.length,
-          unsigned: _isUnsigned(descriptor),
+      ? _mergePageStats(
+          pageStatsList,
+          nullCount: allPresent ? 0 : entries - leaf.values.length,
+          descriptor: descriptor,
           distinctCount: dictionary?.values.length,
         )
       : null;
@@ -568,6 +608,29 @@ _DictionaryPlan? _planDictionary(LeafData leaf, ParquetWriterOptions options) {
   }
   if (leaf.values.isEmpty) return null;
 
+  // A high-cardinality column will exceed the dictionary page budget long
+  // before the full map is built. Sample first so unique string columns fall
+  // back to PLAIN without hashing/boxing every value.
+  const sampleLimit = 4096;
+  if (leaf.values.length > sampleLimit * 2) {
+    final sample = <_ByteKey>{};
+    var sampleBytes = 0;
+    for (var i = 0; i < sampleLimit; i++) {
+      final bytes = leaf.values[i] as Uint8List;
+      final key = _ByteKey(bytes);
+      if (sample.add(key)) {
+        sampleBytes += type == PhysicalType.byteArray
+            ? 4 + bytes.length
+            : bytes.length;
+      }
+    }
+    final projected = sampleBytes * leaf.values.length / sampleLimit;
+    if (projected > options.dictionaryPageSizeLimit &&
+        sample.length >= sampleLimit) {
+      return null;
+    }
+  }
+
   final index = <_ByteKey, int>{};
   final values = <Uint8List>[];
   var size = 0;
@@ -631,6 +694,257 @@ final class _ColumnStatistics {
   final int? distinctCount;
 }
 
+int? _plainFixedSize(PhysicalType type, int? typeLength) {
+  switch (type) {
+    case PhysicalType.boolean:
+      return 1;
+    case PhysicalType.int32:
+    case PhysicalType.float:
+      return 4;
+    case PhysicalType.int64:
+    case PhysicalType.double:
+      return 8;
+    case PhysicalType.int96:
+      return 12;
+    case PhysicalType.fixedLenByteArray:
+      return typeLength;
+    case PhysicalType.byteArray:
+      return null;
+  }
+}
+
+_ColumnStatistics _computeColumnStats(
+  ParquetColumn column,
+  int start,
+  int end,
+  ColumnDescriptor descriptor,
+) {
+  final type = descriptor.physicalType;
+  final unsigned = _isUnsigned(descriptor);
+  switch (type) {
+    case PhysicalType.boolean:
+      final values = (column as BooleanColumn).getBool;
+      var anyFalse = false;
+      for (var i = start; i < end; i++) {
+        if (!values(i)) {
+          anyFalse = true;
+          break;
+        }
+      }
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: Uint8List.fromList([anyFalse ? 0 : 1]),
+        max: Uint8List.fromList([1]),
+      );
+    case PhysicalType.int32:
+      final values = (column as Int32Column).values;
+      var min = values[start];
+      var max = min;
+      for (var i = start + 1; i < end; i++) {
+        final v = values[i];
+        if (_compareInt32(v, min, unsigned) < 0) min = v;
+        if (_compareInt32(v, max, unsigned) > 0) max = v;
+      }
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: encodeStatisticsValue(min, type),
+        max: encodeStatisticsValue(max, type),
+      );
+    case PhysicalType.int64:
+      final values = (column as Int64Column).values;
+      final minLimbs = values.getLimbs(start);
+      var min = Int64Value(minLimbs.$1, minLimbs.$2);
+      var max = min;
+      for (var i = start + 1; i < end; i++) {
+        final limbs = values.getLimbs(i);
+        final v = Int64Value(limbs.$1, limbs.$2);
+        if (_compareInt64(v, min, unsigned) < 0) min = v;
+        if (_compareInt64(v, max, unsigned) > 0) max = v;
+      }
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: encodeStatisticsValue(min, type),
+        max: encodeStatisticsValue(max, type),
+      );
+    case PhysicalType.float:
+      final values = (column as Float32Column).values;
+      var min = double.infinity;
+      var max = double.negativeInfinity;
+      var saw = false;
+      for (var i = start; i < end; i++) {
+        final v = values[i];
+        if (v.isNaN) continue;
+        saw = true;
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      if (!saw) return _ColumnStatistics(nullCount: 0);
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: encodeStatisticsValue(min, type),
+        max: encodeStatisticsValue(max, type),
+      );
+    case PhysicalType.double:
+      final values = (column as Float64Column).values;
+      var min = double.infinity;
+      var max = double.negativeInfinity;
+      var saw = false;
+      for (var i = start; i < end; i++) {
+        final v = values[i];
+        if (v.isNaN) continue;
+        saw = true;
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      if (!saw) return _ColumnStatistics(nullCount: 0);
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: encodeStatisticsValue(min, type),
+        max: encodeStatisticsValue(max, type),
+      );
+    case PhysicalType.byteArray:
+      final binary = column as BinaryColumn;
+      var minIndex = start;
+      var maxIndex = start;
+      for (var i = start + 1; i < end; i++) {
+        if (_compareBinaryRange(binary.data, binary.offsets, i, minIndex) < 0) {
+          minIndex = i;
+        }
+        if (_compareBinaryRange(binary.data, binary.offsets, i, maxIndex) > 0) {
+          maxIndex = i;
+        }
+      }
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: Uint8List.fromList(
+          Uint8List.sublistView(
+            binary.data,
+            binary.offsets[minIndex],
+            binary.offsets[minIndex + 1],
+          ),
+        ),
+        max: Uint8List.fromList(
+          Uint8List.sublistView(
+            binary.data,
+            binary.offsets[maxIndex],
+            binary.offsets[maxIndex + 1],
+          ),
+        ),
+      );
+    case PhysicalType.fixedLenByteArray:
+      final fixed = column as FixedLenColumn;
+      final width = fixed.width;
+      var minIndex = start;
+      var maxIndex = start;
+      for (var i = start + 1; i < end; i++) {
+        final diffMin = _compareFixedRange(fixed.data, width, i, minIndex);
+        if (diffMin < 0) minIndex = i;
+        final diffMax = _compareFixedRange(fixed.data, width, i, maxIndex);
+        if (diffMax > 0) maxIndex = i;
+      }
+      return _ColumnStatistics(
+        nullCount: 0,
+        min: Uint8List.sublistView(
+          fixed.data,
+          minIndex * width,
+          (minIndex + 1) * width,
+        ),
+        max: Uint8List.sublistView(
+          fixed.data,
+          maxIndex * width,
+          (maxIndex + 1) * width,
+        ),
+      );
+    case PhysicalType.int96:
+      return _ColumnStatistics(nullCount: 0);
+  }
+}
+
+/// Compares two BYTE_ARRAY slots without allocating slice views.
+int _compareBinaryRange(Uint8List data, Uint32List offsets, int a, int b) {
+  var aPos = offsets[a];
+  var bPos = offsets[b];
+  final aEnd = offsets[a + 1];
+  final bEnd = offsets[b + 1];
+  final aLength = aEnd - aPos;
+  final bLength = bEnd - bPos;
+  final shared = aLength < bLength ? aLength : bLength;
+  final aLimit = aPos + shared;
+  while (aPos < aLimit) {
+    final diff = data[aPos++] - data[bPos++];
+    if (diff != 0) return diff;
+  }
+  return aLength.compareTo(bLength);
+}
+
+/// Compares two fixed-width slots without allocating slice views.
+int _compareFixedRange(Uint8List data, int width, int a, int b) {
+  var aPos = a * width;
+  var bPos = b * width;
+  final end = aPos + width;
+  while (aPos < end) {
+    final diff = data[aPos++] - data[bPos++];
+    if (diff != 0) return diff;
+  }
+  return 0;
+}
+
+int _averageValueSize(
+  ParquetColumn column,
+  int entries,
+  PhysicalType type,
+  int? typeLength,
+) {
+  if (entries == 0) return 1;
+  const sampleLimit = 1024;
+  final sample = entries < sampleLimit ? entries : sampleLimit;
+  var total = 0;
+  if (column is BinaryColumn) {
+    for (var i = 0; i < sample; i++) {
+      total += 4 + column.offsets[i + 1] - column.offsets[i];
+    }
+  } else if (column is FixedLenColumn) {
+    total = sample * column.width;
+  } else {
+    return _plainFixedSize(type, typeLength) ?? 1;
+  }
+  final average = total ~/ sample;
+  return average < 1 ? 1 : average;
+}
+
+/// Merges per-page bounds into chunk statistics.
+///
+/// Page statistics are already computed for the column index/page headers, so
+/// the chunk min/max is the min/max of those bounds rather than another full
+/// pass over every value.
+_ColumnStatistics _mergePageStats(
+  List<_ColumnStatistics> pages, {
+  required int nullCount,
+  required ColumnDescriptor descriptor,
+  int? distinctCount,
+}) {
+  Uint8List? min;
+  Uint8List? max;
+  for (final page in pages) {
+    final pageMin = page.min;
+    final pageMax = page.max;
+    if (pageMin == null || pageMax == null) continue;
+    if (min == null) {
+      min = pageMin;
+      max = pageMax;
+      continue;
+    }
+    if (_compareBounds(descriptor, pageMin, min) < 0) min = pageMin;
+    if (_compareBounds(descriptor, pageMax, max!) > 0) max = pageMax;
+  }
+  return _ColumnStatistics(
+    nullCount: nullCount,
+    min: min,
+    max: max,
+    distinctCount: distinctCount,
+  );
+}
+
 _ColumnStatistics _computeStats(
   List<Object?> values,
   PhysicalType type, {
@@ -662,8 +976,8 @@ _ColumnStatistics _computeStats(
     case PhysicalType.int32:
       var min = values.first as int;
       var max = min;
-      for (final value in values.skip(1)) {
-        final v = value as int;
+      for (var i = 1; i < values.length; i++) {
+        final v = values[i] as int;
         if (_compareInt32(v, min, unsigned) < 0) min = v;
         if (_compareInt32(v, max, unsigned) > 0) max = v;
       }
@@ -676,8 +990,8 @@ _ColumnStatistics _computeStats(
     case PhysicalType.int64:
       var min = values.first as Int64Value;
       var max = min;
-      for (final value in values.skip(1)) {
-        final v = value as Int64Value;
+      for (var i = 1; i < values.length; i++) {
+        final v = values[i] as Int64Value;
         if (_compareInt64(v, min, unsigned) < 0) min = v;
         if (_compareInt64(v, max, unsigned) > 0) max = v;
       }
@@ -716,8 +1030,8 @@ _ColumnStatistics _computeStats(
     case PhysicalType.fixedLenByteArray:
       var min = values.first as Uint8List;
       var max = min;
-      for (final value in values.skip(1)) {
-        final v = value as Uint8List;
+      for (var i = 1; i < values.length; i++) {
+        final v = values[i] as Uint8List;
         if (_compareBytes(v, min) < 0) min = v;
         if (_compareBytes(v, max) > 0) max = v;
       }

@@ -47,6 +47,63 @@ ParquetColumn buildColumnFromCompact(
   final numValues = validity.length;
   final isUtf8 = _isUtf8(descriptor);
 
+  // Fully valid pages already have one value per row; reuse the compact
+  // buffers instead of copying them into fresh typed arrays.
+  if (!validity.hasNulls) {
+    if (values is Int32List && values.length == numValues) {
+      return Int32Column(
+        name: descriptor.name,
+        values: values,
+        validity: validity,
+      );
+    }
+    if (values is Int64Buffer && values.length == numValues) {
+      return Int64Column(
+        name: descriptor.name,
+        values: values,
+        validity: validity,
+      );
+    }
+    if (values is Float32List && values.length == numValues) {
+      return Float32Column(
+        name: descriptor.name,
+        values: values,
+        validity: validity,
+      );
+    }
+    if (values is Float64List && values.length == numValues) {
+      return Float64Column(
+        name: descriptor.name,
+        values: values,
+        validity: validity,
+      );
+    }
+    if (values is ByteArrayData && values.numValues == numValues) {
+      return BinaryColumn(
+        name: descriptor.name,
+        data: values.data,
+        offsets: values.offsets,
+        validity: validity,
+        isUtf8: isUtf8,
+      );
+    }
+    if (values is FixedLenData && values.numValues == numValues) {
+      if (descriptor.physicalType == PhysicalType.int96) {
+        return Int96Column(
+          name: descriptor.name,
+          data: values.data,
+          validity: validity,
+        );
+      }
+      return FixedLenColumn(
+        name: descriptor.name,
+        data: values.data,
+        width: values.width,
+        validity: validity,
+      );
+    }
+  }
+
   if (values is Int32List) {
     final out = Int32List(numValues);
     var src = 0;

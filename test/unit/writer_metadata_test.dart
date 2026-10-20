@@ -24,7 +24,7 @@ void main() {
       expect(reader.numRowGroups, 0);
       expect(reader.numRows, 0);
       expect(reader.version, 1);
-      expect(reader.createdBy, 'parquet-dart version 0.1.2');
+      expect(reader.createdBy, 'parquet-dart version 0.1.3');
       expect(reader.metadata.fileMetadata.rowGroups, isEmpty);
 
       final expected = <String, LogicalType>{

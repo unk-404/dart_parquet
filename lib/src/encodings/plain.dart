@@ -173,26 +173,29 @@ Float64List decodePlainFloat64(Bytes data, {required int numValues}) {
 /// Decodes PLAIN BYTE_ARRAY values.
 ByteArrayData decodePlainByteArray(Bytes data, {required int numValues}) {
   _checkCount(numValues);
-  final lengths = Uint32List(numValues);
   final source = data.asUint8List();
+  final sourceLength = source.length;
   var position = 0;
   var total = 0;
   for (var i = 0; i < numValues; i++) {
-    if (position + 4 > data.length) {
+    if (position + 4 > sourceLength) {
       throw ParquetEofException(
         'PLAIN BYTE_ARRAY length prefix for value $i is truncated at '
         '$position',
       );
     }
-    final length = data.getUint32(position, endian: Endian.little);
+    final length =
+        source[position] |
+        (source[position + 1] << 8) |
+        (source[position + 2] << 16) |
+        (source[position + 3] << 24);
     position += 4;
-    if (length > data.length - position) {
+    if (length < 0 || length > sourceLength - position) {
       throw ParquetEofException(
         'PLAIN BYTE_ARRAY value $i declares $length bytes but only '
-        '${data.length - position} remain',
+        '${sourceLength - position} remain',
       );
     }
-    lengths[i] = length;
     total += length;
     if (total > 0xFFFFFFFF) {
       throw ParquetRangeException(
@@ -207,8 +210,12 @@ ByteArrayData decodePlainByteArray(Bytes data, {required int numValues}) {
   var sourcePosition = 0;
   var target = 0;
   for (var i = 0; i < numValues; i++) {
-    sourcePosition += 4; // skip the length prefix
-    final length = lengths[i];
+    final length =
+        source[sourcePosition] |
+        (source[sourcePosition + 1] << 8) |
+        (source[sourcePosition + 2] << 16) |
+        (source[sourcePosition + 3] << 24);
+    sourcePosition += 4;
     offsets[i] = target;
     if (length > 0) {
       out.setRange(target, target + length, source, sourcePosition);

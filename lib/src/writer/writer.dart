@@ -76,7 +76,11 @@ final class ParquetWriter {
       throw StateError('ParquetWriter.finish() has already been called');
     }
     validateTableShape(table, schema);
-    final leaves = shredTable(table, schema);
+    final leaves = shredTable(
+      table,
+      schema,
+      fastFlat: !options.writeBloomFilter,
+    );
 
     final rowGroupStart = _out.length;
     final chunks = <Map<int, Object?>>[];

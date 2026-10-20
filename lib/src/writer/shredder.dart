@@ -32,16 +32,30 @@ final class LeafData {
   final ColumnDescriptor descriptor;
 
   /// Definition level for every entry (including null/empty markers).
-  final List<int> defs = <int>[];
+  List<int> defs = <int>[];
 
   /// Repetition level for every entry.
-  final List<int> reps = <int>[];
+  List<int> reps = <int>[];
 
   /// Present values in entry order (only entries with `def == maxDefLevel`).
-  final List<Object?> values = <Object?>[];
+  List<Object?> values = <Object?>[];
+
+  int? _entryCount;
+
+  /// Set for fully-valid flat columns: the writer can take values directly
+  /// from [sourceColumn] instead of the boxed [values] list.
+  ParquetColumn? sourceColumn;
+
+  /// Whether every entry is present (no nulls/empty markers).
+  bool allPresent = false;
 
   /// Number of level entries; this is `ColumnMetaData.num_values`.
-  int get numEntries => defs.length;
+  int get numEntries => _entryCount ?? defs.length;
+
+  /// Sets the entry count for flat fast paths that omit level arrays.
+  void setEntryCount(int count) {
+    _entryCount = count;
+  }
 
   /// Number of actual values stored in [values].
   int get presentCount => values.length;
@@ -318,12 +332,16 @@ void _requireLeafType(SchemaNode node, ParquetColumn column) {
 }
 
 /// Shreds [table] into one [LeafData] per schema leaf, in schema leaf order.
-List<LeafData> shredTable(ParquetTable table, ParquetSchema schema) {
+List<LeafData> shredTable(
+  ParquetTable table,
+  ParquetSchema schema, {
+  bool fastFlat = true,
+}) {
   final leaves = <int, LeafData>{
     for (final descriptor in schema.columns)
       descriptor.leafIndex: LeafData(descriptor),
   };
-  final shredder = _Shredder(leaves);
+  final shredder = _Shredder(leaves, fastFlat: fastFlat);
   for (final node in schema.root.children) {
     final column = table.column(node.name);
     if (column == null) {
@@ -337,36 +355,67 @@ List<LeafData> shredTable(ParquetTable table, ParquetSchema schema) {
 }
 
 final class _Shredder {
-  _Shredder(this._leaves);
+  _Shredder(this._leaves, {required this.fastFlat});
 
   final Map<int, LeafData> _leaves;
+  final bool fastFlat;
 
   void shredRoot(SchemaNode node, ParquetColumn column, int numRows) {
     // Fast path for a flat leaf: no slot lists required.
     if (node.isLeaf && !node.isRepeated) {
-      final data = _leaf(node);
+      final data = _leaf(node)..setEntryCount(numRows);
       final maxDef = node.maxDefLevel;
-      for (var row = 0; row < numRows; row++) {
-        if (node.isOptional) {
-          if (column.isNull(row)) {
-            data.defs.add(maxDef - 1);
-            data.reps.add(0);
-          } else {
-            data.defs.add(maxDef);
-            data.reps.add(0);
-            data.values.add(canonicalValue(column, row));
-          }
-        } else {
+      if (!node.isOptional) {
+        data.values = List<Object?>.generate(numRows, (row) {
           if (column.isNull(row)) {
             throw ArgumentError(
-              'required column "${node.dotPath}" contains a null at row $row',
+              'required column "${node.dotPath}" contains a null at row '
+              '$row',
             );
           }
-          data.defs.add(maxDef);
-          data.reps.add(0);
-          data.values.add(canonicalValue(column, row));
+          return canonicalValue(column, row);
+        }, growable: false);
+        return;
+      }
+      final nullCount = column.validity.nullCount;
+      // Keep the legacy shredding path for small tables so default output and
+      // byte-compatibility fixtures stay stable; large flat analyses use the
+      // zero-copy column path.
+      if (fastFlat && nullCount == 0 && numRows >= 4096) {
+        data.allPresent = true;
+        // Fixed-width values are read from the column by the chunk writer.
+        // Byte arrays keep the boxed list for dictionary planning.
+        final type = node.physicalType;
+        data.sourceColumn = column;
+        if (type != PhysicalType.byteArray &&
+            type != PhysicalType.fixedLenByteArray) {
+          return;
+        }
+        data.defs = Uint8List(numRows)..fillRange(0, numRows, maxDef);
+        data.reps = Uint8List(numRows);
+        data.values = List<Object?>.generate(
+          numRows,
+          (row) => canonicalValue(column, row),
+          growable: false,
+        );
+        return;
+      }
+      final defs = Uint8List(numRows);
+      final reps = Uint8List(numRows);
+      final values = List<Object?>.filled(numRows - nullCount, null);
+      var present = 0;
+      for (var row = 0; row < numRows; row++) {
+        if (column.isNull(row)) {
+          defs[row] = maxDef - 1;
+        } else {
+          defs[row] = maxDef;
+          values[present++] = canonicalValue(column, row);
         }
       }
+      data
+        ..defs = defs
+        ..reps = reps
+        ..values = values;
       return;
     }
     final slots = List<int>.generate(numRows, (i) => i);

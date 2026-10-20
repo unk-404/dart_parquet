@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.3
+
+- Performance release; no public API removed or changed.
+- Reader: reuse fully-valid compact column buffers instead of copying every
+  value, fast single-page concatenation, cheaper PLAIN BYTE_ARRAY decoding, and
+  metadata reuse in parallel row-group isolates.
+- Writer: large flat tables now encode fixed-width and BYTE_ARRAY values
+  directly from typed columns, skip boxed value lists and level arrays, merge
+  per-page bounds into chunk statistics, and sample high-cardinality dictionaries
+  before building the full map. Small-table output remains byte-compatible with
+  v0.1.2 defaults.
+- `created_by` now reports `parquet-dart version 0.1.3`.
+- Added a large-table fast-path round-trip test (all flat types, nulls, page
+  index, CRC).
+
 ## 0.1.2
 
 - Final functional/API acceptance release.

@@ -486,6 +486,7 @@ Object _emptyValues(PhysicalType type, int? typeLength) {
 }
 
 Uint8List _concatBytes(List<Uint8List> chunks) {
+  if (chunks.length == 1) return chunks.first;
   var total = 0;
   for (final c in chunks) {
     total += c.length;

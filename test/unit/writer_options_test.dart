@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('ParquetWriterOptions', () {
-    test('defaults match the v0.1.2 contract', () {
+    test('defaults match the v0.1.3 contract', () {
       const options = ParquetWriterOptions();
       expect(options.compression, CompressionType.uncompressed);
       expect(options.useDictionary, isTrue);
@@ -14,7 +14,7 @@ void main() {
       expect(options.dataPageVersion, 1);
       expect(options.writeStatistics, isTrue);
       expect(options.pageSize, 1024 * 1024);
-      expect(options.createdBy, 'parquet-dart version 0.1.2');
+      expect(options.createdBy, 'parquet-dart version 0.1.3');
       expect(options.keyValueMetadata, isNull);
       expect(options.codec, isNotNull);
       expect(options.writeCrc, isFalse);

@@ -14,6 +14,7 @@ import '../util/int64.dart';
 /// [FixedLenData].
 Object concatValueChunks(List<Object> chunks) {
   if (chunks.isEmpty) return Int32List(0);
+  if (chunks.length == 1) return chunks.first;
   final first = chunks.first;
   if (first is Int32List) {
     var total = 0;
