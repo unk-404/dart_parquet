@@ -4,7 +4,8 @@ library;
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:blit/blit.dart' show openBytesFile;
+import '../support/blit_file.dart';
+
 import 'package:parquet/parquet.dart';
 import 'package:test/test.dart';
 

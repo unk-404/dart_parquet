@@ -1,16 +1,16 @@
 /// Native stubs for blit's Web-only Blob and IndexedDB backends.
 library;
 
-import 'package:blit/blit.dart' show BytesFile;
+import 'package:blit/blit.dart' show BlitFile;
 
-Future<BytesFile> openBlobBytesFileWeb(
+Future<BlitFile> openBlobBytesFileWeb(
   Object blob, {
   int cacheLimit = 8 << 20,
 }) async {
   throw UnsupportedError('blit Blob bytes files are only available on the web');
 }
 
-Future<BytesFile> openIdbBytesFileWeb(
+Future<BlitFile> openIdbBytesFileWeb(
   String path, {
   bool create = false,
   bool readOnly = true,

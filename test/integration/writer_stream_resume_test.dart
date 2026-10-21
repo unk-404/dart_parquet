@@ -4,7 +4,8 @@ library;
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:blit/blit.dart' show openBytesFile;
+import '../support/blit_file.dart';
+
 import 'package:parquet/parquet.dart';
 import 'package:parquet/src/format/parquet_format.dart' show ColumnOrderKind;
 import 'package:test/test.dart';
@@ -76,8 +77,8 @@ void main() {
           createdBy: 'parquet-dart version 0.1.3',
         ),
       );
-      expect(zstdBytes.length, 109332);
-      expect(_fnv(zstdBytes), 729046488);
+      expect(zstdBytes.length, 111700);
+      expect(_fnv(zstdBytes), 1329586747);
     });
 
     test('fileMetaData is valid on an empty writer', () async {

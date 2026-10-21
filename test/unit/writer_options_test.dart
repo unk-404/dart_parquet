@@ -14,7 +14,7 @@ void main() {
       expect(options.dataPageVersion, 1);
       expect(options.writeStatistics, isTrue);
       expect(options.pageSize, 1024 * 1024);
-      expect(options.createdBy, 'parquet-dart version 0.2.0');
+      expect(options.createdBy, 'parquet-dart version 0.2.1');
       expect(options.keyValueMetadata, isNull);
       expect(options.codec, isNotNull);
       expect(options.writeCrc, isFalse);

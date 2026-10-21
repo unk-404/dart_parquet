@@ -1,12 +1,12 @@
 /// File output helpers for the Parquet writer.
 ///
 /// The shared function [writeParquetTableToBytesFile] works with blit's
-/// cross-platform [BytesFile]. The path-based [writeParquetTableToFile] is
+/// cross-platform [BlitFile]. The path-based [writeParquetTableToFile] is
 /// selected at compile time: `dart:io` on the VM and OPFS through blit on the
 /// web.
 library;
 
-import 'package:blit/blit.dart' show BytesFile;
+import 'package:blit/blit.dart' show BlitFile;
 
 import '../table/table.dart';
 import 'writer.dart';
@@ -21,21 +21,11 @@ export 'file_output_native.dart'
 /// several files into a container format).
 Future<void> writeParquetTableToBytesFile(
   ParquetTable table,
-  BytesFile file, {
+  BlitFile file, {
   ParquetWriterOptions options = const ParquetWriterOptions(),
 }) async {
   final bytes = writeParquetTable(table, options: options);
-  var offset = 0;
-  while (offset < bytes.length) {
-    final written = await file.writeAt(offset, bytes, start: offset);
-    if (written <= 0) {
-      throw StateError(
-        'BytesFile.writeAt made no progress at offset $offset of '
-        '${bytes.length}',
-      );
-    }
-    offset += written;
-  }
+  await file.writeAt(0, bytes);
   await file.truncate(bytes.length);
   await file.flush();
 }

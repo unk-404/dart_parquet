@@ -48,8 +48,8 @@ void main() {
           createdBy: 'parquet-dart version 0.1.1',
         ),
       );
-      expect(bytes.length, 29684);
-      expect(_fnv(bytes), 929198025);
+      expect(bytes.length, 30868);
+      expect(_fnv(bytes), 1447791338);
     });
 
     test('multi-row-group output is unchanged', () {
@@ -87,10 +87,10 @@ void main() {
       expect(explicit, writeParquetTable(table, options: oldBy));
     });
 
-    test('default created_by is the v0.2.0 value', () {
+    test('default created_by is the v0.2.1 value', () {
       final bytes = writeParquetTable(_flat());
       final reader = ParquetReader.fromBytes(bytes);
-      expect(reader.createdBy, 'parquet-dart version 0.2.0');
+      expect(reader.createdBy, 'parquet-dart version 0.2.1');
       expect(reader.metadata.rowGroup(0).column(0).offsetIndexOffset, isNull);
     });
   });

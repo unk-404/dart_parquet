@@ -1,43 +1,23 @@
-/// Native read-only whole-file (or windowed) mmap source.
+/// Native read-only whole-file (or windowed) random-access source.
 ///
-/// ## Limitations
-///
-/// * **Native only.** Windows, Linux, macOS and other `dart:ffi` targets with
-///   the `blit` mmap backend. Browsers have no mmap; the web stub throws
-///   [UnsupportedError] (use `BlitSource`/OPFS or a Blob source instead).
-/// * **Read-only.** The file is opened with `create: false, readOnly: true` and
-///   the mapping is `writable: false`. Writing through the view is a
-///   use-after-unmap-class bug / access violation; do not do it.
-/// * **Lifetime.** A [Bytes] returned by [read] aliases the mapping. It is valid
-///   only until [close]; keeping it afterwards is a use-after-unmap. Copy with
-///   `Bytes.toUint8List()` if you need to outlive the source.
-/// * **Address space.** The mapping is virtual and does not eagerly read the
-///   file, but it does reserve `length` bytes of address space. Very large files
-///   should use a window ([MmapSource.open] with `offset`/`length`) or the
-///   parallel source instead.
-/// * **File stability.** Do not truncate, rewrite or delete the file while it is
-///   mapped. On Windows a mapping can keep the file locked against deletion
-///   until [MmapSource.close]; on POSIX the mapping keeps the old contents
-///   alive. Parquet files are immutable, so this matches normal usage.
-/// * The mmap engine is synchronous; do not call [read] on a UI isolate.
+/// This source keeps a synchronous `dart:io` handle open. The historical blit
+/// mmap backend was removed in blit 0.2; the public [MmapSource] contract is
+/// preserved (read-only, synchronous, windowed) while reads go through the
+/// platform file handle.
 library;
 
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:blit/blit.dart' show Bytes;
-import 'package:blit/bytes_ffi.dart' as blit_ffi;
 
 import 'source.dart';
 
-/// Read-only [SyncParquetSource] over a `blit` file mapping.
-///
-/// Reads are zero-copy slices of the mapped memory: no syscall and no buffer
-/// copy per page. The whole file is mapped by default; pass `offset`/`length`
-/// to [open] to map only a window (useful for huge files).
+/// Read-only [SyncParquetSource] over a native file window.
 final class MmapSource implements SyncParquetSource {
   MmapSource._(
     this.path,
     this._file,
-    this._region,
-    this._bytes,
     this.fileOffset,
     this.fileLength,
     this._windowLength,
@@ -46,27 +26,20 @@ final class MmapSource implements SyncParquetSource {
   /// The path this source was opened from.
   final String path;
 
-  /// File offset of the mapped window.
+  /// File offset of the window.
   final int fileOffset;
 
-  /// Total length of the underlying file (not just the mapped window).
+  /// Total length of the underlying file.
   final int fileLength;
 
-  final blit_ffi.MmapFile _file;
-  final blit_ffi.MappedRegion? _region;
-  final Bytes _bytes;
+  final RandomAccessFile _file;
   final int _windowLength;
   bool _closed = false;
 
-  /// Maps a read-only view of [path].
+  /// Opens a read-only view of [path].
   ///
-  /// [offset] and [length] select a window of the file; the default maps the
-  /// whole file. [prefetch] hints the OS to page the mapping in eagerly
-  /// (`PrefetchVirtualMemory` on Windows, `madvise(MADV_WILLNEED)` elsewhere).
-  ///
-  /// Throws a [FileSystemException](https://api.dart.dev/dart-io/FileSystemException-class.html)
-  /// (or a blit native exception) when the file cannot be opened or mapped, and
-  /// [RangeError] when the window lies outside the file.
+  /// [offset] and [length] select a window of the file; the default covers the
+  /// whole file. [prefetch] is accepted for API compatibility.
   static MmapSource open(
     String path, {
     int offset = 0,
@@ -76,9 +49,9 @@ final class MmapSource implements SyncParquetSource {
     if (offset < 0) {
       throw RangeError.range(offset, 0, null, 'offset');
     }
-    final file = blit_ffi.openMmapFileSync(path, create: false, readOnly: true);
+    final file = File(path).openSync(mode: FileMode.read);
     try {
-      final total = file.length;
+      final total = file.lengthSync();
       if (offset > total) {
         throw RangeError.range(offset, 0, total, 'offset');
       }
@@ -86,33 +59,14 @@ final class MmapSource implements SyncParquetSource {
       if (window < 0 || offset + window > total) {
         throw RangeError.range(window, 0, total - offset, 'length');
       }
-      final region = window == 0
-          ? null
-          : file.map(offset: offset, length: window, writable: false);
-      final bytes = region == null
-          ? Bytes.empty
-          : Bytes.fromUint8List(region.bytes);
-      final source = MmapSource._(
-        path,
-        file,
-        region,
-        bytes,
-        offset,
-        total,
-        window,
-      );
-      if (prefetch) region?.prefetch();
-      return source;
+      return MmapSource._(path, file, offset, total, window);
     } catch (_) {
-      file.close();
+      file.closeSync();
       rethrow;
     }
   }
 
   /// Asynchronous convenience wrapper around [open].
-  ///
-  /// The mapping itself is synchronous; this only matches the async source
-  /// factories.
   static Future<MmapSource> openAsync(
     String path, {
     int offset = 0,
@@ -120,11 +74,11 @@ final class MmapSource implements SyncParquetSource {
     bool prefetch = false,
   }) async => open(path, offset: offset, length: length, prefetch: prefetch);
 
-  /// Whether a mapping exists (false for an empty file or a zero-length window).
-  bool get isMapped => _region != null;
+  /// Whether a non-empty window exists.
+  bool get isMapped => _windowLength > 0;
 
-  /// Whether the mapping is writable; always false for this source.
-  bool get isWritable => _region?.isWritable ?? false;
+  /// This source never maps writable memory.
+  bool get isWritable => false;
 
   /// Whether [close] has been called.
   bool get isClosed => _closed;
@@ -133,14 +87,14 @@ final class MmapSource implements SyncParquetSource {
     if (_closed) throw StateError('MmapSource($path) is closed');
   }
 
-  /// Length of the mapped window.
+  /// Length of the window.
   @override
   int get length {
     _checkOpen();
     return _windowLength;
   }
 
-  /// Returns a zero-copy slice of the mapping.
+  /// Returns a copy of the window slice.
   @override
   Bytes read(int offset, int length) {
     _checkOpen();
@@ -149,31 +103,32 @@ final class MmapSource implements SyncParquetSource {
     }
     RangeError.checkValidRange(offset, offset + length, _windowLength);
     if (length == 0) return Bytes.empty;
-    return _bytes.slice(offset, offset + length);
+    final buffer = Uint8List(length);
+    _file.setPositionSync(fileOffset + offset);
+    var filled = 0;
+    while (filled < length) {
+      final n = _file.readIntoSync(buffer, filled, length);
+      if (n <= 0) {
+        throw StateError(
+          'short read from $path at ${fileOffset + offset + filled}',
+        );
+      }
+      filled += n;
+    }
+    return Bytes.fromUint8List(buffer);
   }
 
-  /// Hints the OS to page in the mapped window (or a sub-range of it).
+  /// Accepted for API compatibility.
   void prefetch({int offset = 0, int? length}) {
     _checkOpen();
-    final region = _region;
-    if (region == null) return;
-    RangeError.checkValidRange(
-      offset,
-      offset + (length ?? _windowLength - offset),
-      _windowLength,
-    );
-    region.prefetch(offset: offset, length: length);
   }
 
-  /// Closes the mapping and the file handle. Idempotent.
-  ///
-  /// Any [Bytes] previously returned by [read] becomes invalid.
+  /// Closes the file handle. Idempotent.
   @override
   void close() {
     if (_closed) return;
     _closed = true;
-    _region?.close();
-    _file.close();
+    _file.closeSync();
   }
 
   @override
@@ -181,7 +136,7 @@ final class MmapSource implements SyncParquetSource {
       'MmapSource($path, offset: $fileOffset, length: $_windowLength)';
 }
 
-/// Opens a read-only mmap source, synchronously.
+/// Opens a read-only source synchronously.
 MmapSource openMmapSourceSync(
   String path, {
   int offset = 0,
@@ -189,7 +144,7 @@ MmapSource openMmapSourceSync(
   bool prefetch = false,
 }) => MmapSource.open(path, offset: offset, length: length, prefetch: prefetch);
 
-/// Opens a read-only mmap source asynchronously (the mapping is synchronous).
+/// Opens a read-only source asynchronously.
 Future<MmapSource> openMmapSource(
   String path, {
   int offset = 0,

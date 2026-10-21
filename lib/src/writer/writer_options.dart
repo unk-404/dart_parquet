@@ -20,7 +20,7 @@ final class ParquetWriterOptions {
     this.dataPageVersion = 1,
     this.writeStatistics = true,
     this.pageSize = 1024 * 1024,
-    this.createdBy = 'parquet-dart version 0.2.0',
+    this.createdBy = 'parquet-dart version 0.2.1',
     this.keyValueMetadata,
     this.writeCrc = false,
     this.writePageIndex = false,

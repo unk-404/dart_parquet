@@ -1,7 +1,7 @@
 /// Web implementation of [writeParquetTableToFile] using blit's OPFS backend.
 library;
 
-import 'package:blit/blit.dart' show openBytesFile;
+import 'package:blit/blit.dart' show FileMode, FileOptions, blit;
 
 import '../table/table.dart';
 import 'writer.dart';
@@ -21,19 +21,12 @@ Future<void> writeParquetTableToFile(
   bool create = true,
 }) async {
   final bytes = writeParquetTable(table, options: options);
-  final file = await openBytesFile(path, create: create, readOnly: false);
+  final file = await blit.open(
+    path,
+    options: FileOptions(mode: FileMode.readWrite, create: create),
+  );
   try {
-    var offset = 0;
-    while (offset < bytes.length) {
-      final written = await file.writeAt(offset, bytes, start: offset);
-      if (written <= 0) {
-        throw StateError(
-          'OPFS writeAt made no progress at offset $offset of '
-          '${bytes.length}',
-        );
-      }
-      offset += written;
-    }
+    await file.writeAt(0, bytes);
     await file.truncate(bytes.length);
     await file.flush();
   } finally {

@@ -1,6 +1,6 @@
 name: parquet
 description: Pure Dart Apache Parquet reader and writer with VM and Web support.
-version: 0.2.0
+version: 0.2.1
 repository: https://github.com/unk-404/dart_parquet
 issue_tracker: https://github.com/unk-404/dart_parquet/issues
 
@@ -14,11 +14,11 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
-  blit: ^0.1.6
-  snappy_neo: ^0.1.2
-  zstd_neo: ^0.1.2
-  brotli_neo: ^0.1.2
-  lzo_neo: ^0.1.2
+  blit: ^0.2.1
+  snappy_neo: ^0.2.2
+  zstd_neo: ^0.2.0
+  brotli_neo: ^0.2.0
+  lzo_neo: ^0.2.2
   dart_lz4: ^1.4.0
   just_deflate: ^0.1.0
 
@@ -26,4 +26,6 @@ dev_dependencies:
   benchmark_test: ^0.1.2
   lints: ^6.0.0
   test: ^1.25.6
+
+
 

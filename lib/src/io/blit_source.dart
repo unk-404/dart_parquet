@@ -1,20 +1,19 @@
-/// `ParquetSource` adapter for blit's [BytesFile].
+/// `ParquetSource` adapter for blit's [BlitFile].
 ///
-/// `BytesFile` is blit's cross-platform random-access file abstraction: a native
+/// `BlitFile` is blit's cross-platform random-access file abstraction: a native
 /// file on the VM and a chunked OPFS file on the web. This adapter therefore
 /// gives the reader async file access on both platforms without any
 /// `dart:io`/`dart:ffi` dependency in the shared graph.
 library;
 
-import 'dart:typed_data';
-
-import 'package:blit/blit.dart' show Bytes, BytesFile, openBytesFile;
+import 'package:blit/blit.dart'
+    show BlitFile, Bytes, FileMode, FileOptions, blit;
 
 import '../util/errors.dart';
 import 'blit_web.dart';
 import 'source.dart';
 
-/// Asynchronous [ParquetSource] over a blit [BytesFile].
+/// Asynchronous [ParquetSource] over a blit [BlitFile].
 final class BlitSource implements ParquetSource {
   BlitSource(this.file);
 
@@ -26,10 +25,17 @@ final class BlitSource implements ParquetSource {
     String path, {
     bool create = false,
     bool readOnly = true,
-  }) async =>
-      BlitSource(await openBytesFile(path, create: create, readOnly: readOnly));
+  }) async => BlitSource(
+    await blit.open(
+      path,
+      options: FileOptions(
+        mode: readOnly ? FileMode.read : FileMode.readWrite,
+        create: create,
+      ),
+    ),
+  );
 
-  /// Opens a read-only blit [BytesFile] over a JavaScript `Blob`/`File`.
+  /// Opens a read-only blit [BlitFile] over a JavaScript `Blob`/`File`.
   ///
   /// Requires blit >= 0.1.6; only available on the web. Small blobs are cached
   /// in memory once, larger ones use `Blob.slice()` per read.
@@ -39,7 +45,7 @@ final class BlitSource implements ParquetSource {
   }) async =>
       BlitSource(await openBlobBytesFileWeb(blob, cacheLimit: cacheLimit));
 
-  /// Opens a blit IndexedDB-backed [BytesFile].
+  /// Opens a blit IndexedDB-backed [BlitFile].
   ///
   /// Requires blit >= 0.1.6; only available on the web. IndexedDB is an
   /// explicit fallback for contexts where OPFS sync handles are unavailable.
@@ -64,7 +70,7 @@ final class BlitSource implements ParquetSource {
 
   /// The underlying file handle, exposed for callers that need its extras
   /// (e.g. `SyncBytesFile` on native).
-  final BytesFile file;
+  final BlitFile file;
 
   @override
   Future<int> get length => file.length;
@@ -78,19 +84,14 @@ final class BlitSource implements ParquetSource {
     RangeError.checkValidRange(offset, offset + length, fileLength);
     if (length == 0) return Bytes.empty;
 
-    final buffer = Uint8List(length);
-    var filled = 0;
-    while (filled < length) {
-      final read = await file.readAt(offset + filled, buffer, start: filled);
-      if (read <= 0) {
-        throw ParquetEofException(
-          'short read from blit file at $offset: '
-          'got $filled of $length bytes',
-        );
-      }
-      filled += read;
+    final bytes = await file.readAt(offset, length);
+    if (bytes.length != length) {
+      throw ParquetEofException(
+        'short read from blit file at $offset: '
+        'got ${bytes.length} of $length bytes',
+      );
     }
-    return Bytes.fromUint8List(buffer);
+    return bytes;
   }
 
   @override

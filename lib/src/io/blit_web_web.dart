@@ -3,23 +3,24 @@ library;
 
 import 'dart:js_interop';
 
-import 'package:blit/blit.dart' show BytesFile;
+import 'package:blit/blit.dart' show BlitFile;
+import 'package:blit/blit_web.dart' as bw;
 // ignore: implementation_imports
 import 'package:blit/src/io/web/web.dart' as web;
 
-Future<BytesFile> openBlobBytesFileWeb(
+Future<BlitFile> openBlobBytesFileWeb(
   Object blob, {
   int cacheLimit = 8 << 20,
-}) => web.openBlobBytesFile(blob as JSObject, cacheLimit: cacheLimit);
+}) => bw.openBlob(blob as JSObject, cacheLimit: cacheLimit);
 
-Future<BytesFile> openIdbBytesFileWeb(
+Future<BlitFile> openIdbBytesFileWeb(
   String path, {
   bool create = false,
   bool readOnly = true,
   int chunkSize = 64 * 1024,
   String? databaseName,
   String? storeName,
-}) => web.openIdbBytesFile(
+}) => bw.openIndexedDb(
   path,
   create: create,
   readOnly: readOnly,

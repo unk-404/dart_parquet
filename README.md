@@ -17,7 +17,7 @@ OPFS, IndexedDB, browser `Blob`/`File` and HTTP Range sources.
 
 ```yaml
 dependencies:
-  parquet: ^0.2.0
+  parquet: ^0.2.1
 ```
 
 ```sh
@@ -144,11 +144,13 @@ read from a file.
 
 ### Streaming to a file
 
-`ParquetStreamWriter` writes each row group directly to a blit `BytesFile`
+`ParquetStreamWriter` writes each row group directly to a blit `BlitFile`
 (OPFS on Web), so the complete file is never buffered in memory:
 
 ```dart
-final file = await openBytesFile('data.parquet', readOnly: false);
+import 'package:blit/blit.dart';
+
+final file = await blit.open('data.parquet');
 final writer = ParquetStreamWriter(table.schema, file);
 await writer.add(table);
 await writer.add(anotherTable);
@@ -211,7 +213,7 @@ adapters include:
 
 - `MemorySource`
 - native files (`dart:io`)
-- blit `BytesFile`: native, OPFS, Blob and IndexedDB
+- blit `BlitFile`: native, OPFS, Blob and IndexedDB
 - `HttpRangeSource` for callback-based HTTP range requests
 - native `MmapSource` and `ParallelBytesFileSource`
 
@@ -275,3 +277,4 @@ benchmark/rust/target/release/parquet-bench --jsonl rust.jsonl
 ## License
 
 MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+

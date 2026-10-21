@@ -1,14 +1,14 @@
 /// File-backed streaming Parquet writer.
 ///
 /// Unlike [ParquetWriter], which buffers the complete encoded file before
-/// returning bytes, this writer appends each row group to a blit [BytesFile]
+/// returning bytes, this writer appends each row group to a blit [BlitFile]
 /// as soon as it is encoded. Only one column chunk is held in memory at a time.
 library;
 
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:blit/blit.dart' show BytesFile;
+import 'package:blit/blit.dart' show BlitFile;
 
 import '../format/parquet_format.dart';
 import '../format/thrift.dart';
@@ -30,7 +30,7 @@ import 'writer_options.dart';
 /// serialised, so multiple [add] calls can be issued without awaiting each one.
 ///
 /// ```dart
-/// final file = await openBytesFile('data.parquet', readOnly: false);
+/// final file = await blit.open('data.parquet');
 /// final writer = ParquetStreamWriter(schema, file);
 /// await writer.add(table);
 /// await writer.finish(close: true);
@@ -73,7 +73,7 @@ final class ParquetStreamWriter {
   /// orders are restored; [options] apply to row groups added from now on.
   static Future<ParquetStreamWriter> resume(
     ParquetSchema schema,
-    BytesFile file,
+    BlitFile file,
     FileMetaData fileMetaData, {
     ParquetWriterOptions options = const ParquetWriterOptions(),
   }) async {
@@ -132,7 +132,7 @@ final class ParquetStreamWriter {
 
   /// Destination file. Owned by the caller unless [finish] is called with
   /// `close: true`.
-  final BytesFile file;
+  final BlitFile file;
 
   /// Options for every row group.
   final ParquetWriterOptions options;
@@ -360,16 +360,7 @@ final class ParquetStreamWriter {
   }
 
   Future<void> _writeAt(int offset, Uint8List bytes) async {
-    var written = 0;
-    while (written < bytes.length) {
-      final count = await file.writeAt(offset + written, bytes, start: written);
-      if (count <= 0) {
-        throw StateError(
-          'BytesFile.writeAt made no progress at offset ${offset + written}',
-        );
-      }
-      written += count;
-    }
+    await file.writeAt(offset, bytes);
   }
 }
 
@@ -380,19 +371,14 @@ bool _isMagic(Uint8List bytes) =>
     bytes[2] == 0x52 &&
     bytes[3] == 0x31;
 
-Future<Uint8List> _readExactly(BytesFile file, int offset, int length) async {
-  final buffer = Uint8List(length);
-  var read = 0;
-  while (read < length) {
-    final count = await file.readAt(offset + read, buffer, start: read);
-    if (count <= 0) {
-      throw ParquetFormatException(
-        'unexpected EOF reading $length bytes at $offset',
-      );
-    }
-    read += count;
+Future<Uint8List> _readExactly(BlitFile file, int offset, int length) async {
+  final bytes = await file.readAt(offset, length);
+  if (bytes.length != length) {
+    throw ParquetFormatException(
+      'unexpected EOF reading $length bytes at $offset',
+    );
   }
-  return buffer;
+  return bytes.asUint8List();
 }
 
 int _rawInt(Object? value) {
