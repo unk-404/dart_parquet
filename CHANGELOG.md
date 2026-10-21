@@ -4,9 +4,10 @@
 
 - Upgraded blit to 0.2.1 and moved the stream writer, file output, sources and
   tests to the `BlitFile` / `AsyncFile` API.
-- `MmapSource` keeps its synchronous/windowed public contract on a native
-  random-access handle; blit 0.2 removed the old mmap backend.
-- `ParallelBytesFileSource` now uses a small pool of blit `AsyncFile` handles.
+- `MmapSource` keeps its synchronous, zero-copy, windowed contract through
+  blit's native mmap engine.
+- `ParallelBytesFileSource` keeps the isolate-pool engine for parallel page
+  reads.
 - Upgraded zstd_neo 0.2.0, lzo_neo 0.2.2, brotli_neo 0.2.0, snappy_neo 0.2.2.
 - Zstd writer bytes changed with zstd_neo 0.2.0; pinned compatibility hashes
   were refreshed.
