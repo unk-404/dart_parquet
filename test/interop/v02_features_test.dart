@@ -61,6 +61,33 @@ void main() {
     }
   });
 
+  test('shredded Variant schemas are rejected for writing', () {
+    final table = ParquetReader.fromBytes(
+      File('$_v02/variant/case-044.parquet').readAsBytesSync(),
+    ).readTableSync();
+    expect(
+      () => writeParquetTable(table),
+      throwsA(isA<ParquetUnsupportedException>()),
+    );
+  });
+
+  test('PARE public reader exposes the encryption feature', () {
+    final bytes = File(
+      'test/fixtures/interop/official/'
+      'encrypt_columns_and_footer.parquet.encrypted',
+    ).readAsBytesSync();
+    expect(
+      () => ParquetReader.fromBytes(bytes),
+      throwsA(
+        isA<ParquetUnsupportedFeatureException>().having(
+          (error) => error.feature,
+          'feature',
+          ParquetFeature.encryption,
+        ),
+      ),
+    );
+  });
+
   test('Variant fixtures match upstream semantics', () {
     final expected = <String, Object?>{
       '047': null,

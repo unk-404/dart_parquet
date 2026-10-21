@@ -13,6 +13,7 @@ import 'schema/projection.dart';
 import 'table/column.dart';
 import 'table/nested_assembler.dart';
 import 'table/table.dart';
+import 'feature.dart';
 import 'table/table_concat.dart';
 import 'util/errors.dart';
 import 'parallel/worker_pool.dart';
@@ -371,7 +372,8 @@ Footer _readFooterSync(SyncParquetSource source) {
   final header = source.read(0, 4);
   final magic = String.fromCharCodes(header.asUint8List());
   if (magic == parquetEncryptedMagic) {
-    throw ParquetUnsupportedException(
+    throw ParquetUnsupportedFeatureException(
+      ParquetFeature.encryption,
       'encrypted Parquet files (PARE) are not supported',
     );
   }
@@ -395,7 +397,8 @@ Future<Footer> _readFooterAsync(ParquetSource source) async {
   final header = await source.read(0, 4);
   final magic = String.fromCharCodes(header.asUint8List());
   if (magic == parquetEncryptedMagic) {
-    throw ParquetUnsupportedException(
+    throw ParquetUnsupportedFeatureException(
+      ParquetFeature.encryption,
       'encrypted Parquet files (PARE) are not supported',
     );
   }

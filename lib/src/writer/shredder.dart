@@ -82,6 +82,22 @@ void _validateNode(SchemaNode node) {
     }
     return;
   }
+  if (node.logicalType?.kind == LogicalTypeKind.variant) {
+    final names = <String>{for (final child in node.children) child.name};
+    if (node.children.length != 2 ||
+        !names.contains('metadata') ||
+        !names.contains('value') ||
+        node.children.any((child) => !child.isLeaf)) {
+      throw ParquetUnsupportedException(
+        'writing shredded VARIANT ${node.dotPath} is not supported; '
+        'only unshredded metadata/value groups can be written',
+      );
+    }
+    for (final child in node.children) {
+      _validateNode(child);
+    }
+    return;
+  }
   if (!_hasLeaf(node)) {
     throw ParquetFormatException('group ${node.dotPath} has no leaf columns');
   }
