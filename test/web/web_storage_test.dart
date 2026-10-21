@@ -10,6 +10,8 @@ import 'dart:js_interop';
 import 'dart:typed_data';
 
 // ignore: implementation_imports
+import 'package:blit/blit.dart' show BlitIOException;
+// ignore: implementation_imports
 import 'package:blit/src/io/web/js.dart' show JsBlob;
 import 'package:parquet/parquet.dart';
 import 'package:test/test.dart';
@@ -331,12 +333,7 @@ void main() {
       final path = _uniquePath('parquet-web-missing');
       await expectLater(
         openSource('opfs://$path'),
-        throwsA(
-          predicate<Object>(
-            (error) => error.toString().contains('NotFound'),
-            'a NotFoundError-style web file-system error',
-          ),
-        ),
+        throwsA(isA<BlitIOException>()),
       );
     });
 
