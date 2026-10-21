@@ -15,6 +15,7 @@ import 'table/nested_assembler.dart';
 import 'table/table.dart';
 import 'table/table_concat.dart';
 import 'util/errors.dart';
+import 'parallel/worker_pool.dart';
 
 /// Predicate over row-group metadata used for statistics pruning.
 typedef RowGroupFilter = bool Function(RowGroupMetaData rowGroup);
@@ -296,25 +297,30 @@ final class ParquetReader {
     int workers,
     ParquetPredicate? predicate,
   ) async {
-    final tables = <ParquetTable>[];
-    for (var start = 0; start < indices.length; start += workers) {
-      final end = start + workers < indices.length
-          ? start + workers
-          : indices.length;
-      final batch = await Future.wait([
-        for (var i = start; i < end; i++)
-          runParquetIsolate(() {
-            final reader = ParquetReader.fromBytes(
-              bytes,
-              options: ParquetReaderOptions(columns: columns, parallelism: 1),
-            );
-            return reader.readRowGroupSync(indices[i]);
-          }),
-      ]);
-      tables.addAll(batch);
+    final pool = await WorkerPool.start(workers: workers);
+    try {
+      final tables = <ParquetTable>[];
+      for (var start = 0; start < indices.length; start += workers) {
+        final end = start + workers < indices.length
+            ? start + workers
+            : indices.length;
+        final batch = await pool.runAll([
+          for (var i = start; i < end; i++)
+            () {
+              final reader = ParquetReader.fromBytes(
+                bytes,
+                options: ParquetReaderOptions(columns: columns, parallelism: 1),
+              );
+              return reader.readRowGroupSync(indices[i]);
+            },
+        ]);
+        tables.addAll(batch);
+      }
+      final table = concatTables(projectionSchema, tables);
+      return predicate == null ? table : table.filterRows(predicate);
+    } finally {
+      await pool.close();
     }
-    final table = concatTables(projectionSchema, tables);
-    return predicate == null ? table : table.filterRows(predicate);
   }
 
   /// Streams one table per row group, bounding peak memory to one row group.

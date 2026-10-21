@@ -210,6 +210,10 @@ def write_variant(case: dict) -> dict:
         },
         "leaves": canon.leaves_from_parquet(pf),
         "physical_columns": columns,
+        "physical_columns_note": (
+            "pyarrow-derived physical-struct values; dart_class is the "
+            "generic struct mapping, while the current Dart reader exposes "
+            "VariantColumn for unshredded VARIANT groups"),
         "engine_support": engine_probe_variant(parquet_path),
         "dart_reader": VARIANT_DART_STATUS[case_number],
         "note": (
@@ -370,6 +374,7 @@ def main() -> int:
         "description": "v0.2.0 interop assets: Variant, ALP and deep nesting",
         "generator": "tool/interop/gen_v02_expected.py",
         "pyarrow_version": pa.__version__,
+        "dart_status_as_of": "2026-10-21",
         "source": {
             "repository": SOURCE_REPO,
             "commit": SOURCE_COMMIT,
