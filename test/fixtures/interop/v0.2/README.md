@@ -107,3 +107,5 @@ the current error and the v0.2 target:
 [sv-readme]: https://github.com/apache/parquet-testing/blob/3acde70509f990c4ddfe34bf3ab05890657e766c/shredded_variant/README.md
 [sv-cases]: https://github.com/apache/parquet-testing/blob/3acde70509f990c4ddfe34bf3ab05890657e766c/shredded_variant/cases.json
 [alp-note]: https://github.com/apache/parquet-testing/blob/3acde70509f990c4ddfe34bf3ab05890657e766c/data/README.md#alp-encoding
+
+Additional array cases (case-001, case-002, case-136) from the same upstream shredded_variant directory, Apache-2.0, commit 3acde70509f990c4ddfe34bf3ab05890657e766c.

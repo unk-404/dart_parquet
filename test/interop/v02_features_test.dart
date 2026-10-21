@@ -101,6 +101,12 @@ void main() {
         'd': -0.0,
       },
       '130': <String, Object?>{},
+      '001': ['comedy', 'drama'],
+      '002': <Object?>[],
+      '136': [
+        ['comedy', 'drama'],
+        <Object?>[],
+      ],
     };
     for (final entry in expected.entries) {
       final reader = ParquetReader.fromBytes(

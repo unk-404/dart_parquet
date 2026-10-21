@@ -136,9 +136,23 @@ ParquetColumn _buildVariantColumn(
     );
   }
 
-  VariantValue? typedAt(int row) {
+  final assembler = _Assembler(schema, leaves);
+  final assembledCache = <SchemaNode, ParquetColumn>{};
+  ParquetColumn assemble(SchemaNode child) {
+    final cached = assembledCache[child];
+    if (cached != null) return cached;
+    final column = assembler.assemble(
+      _Position(child),
+      assembler.rootStreams(child),
+      numRows,
+    );
+    assembledCache[child] = column;
+    return column;
+  }
+
+  VariantValue? typedAt(int row, VariantMetadata metadataValue) {
     if (typedNode == null) return null;
-    return _variantTypedAt(typedNode, row, columnFor);
+    return _variantTypedAt(typedNode, row, columnFor, assemble, metadataValue);
   }
 
   VariantValue? rawAt(int row) {
@@ -157,7 +171,7 @@ ParquetColumn _buildVariantColumn(
       continue;
     }
     final metadataValue = VariantMetadata.fromBytes(metadata.getBytes(row));
-    final typed = typedAt(row);
+    final typed = typedAt(row, metadataValue);
     final raw = rawAt(row);
     VariantValue? value;
     if (typed != null) {
@@ -181,22 +195,46 @@ VariantValue? _variantTypedAt(
   SchemaNode node,
   int row,
   ParquetColumn Function(SchemaNode) columnFor,
+  ParquetColumn Function(SchemaNode) assemble,
+  VariantMetadata metadata,
 ) {
   if (node.isLeaf) {
     final column = columnFor(node);
     if (column.isNull(row)) return null;
     return _variantPrimitive(node, column.value(row), column, row);
   }
-  if (node.isRepeated) {
+  final kind = node.logicalType?.kind;
+  if (kind == LogicalTypeKind.list) {
+    final column = assemble(node);
+    if (column is! ListColumn || column.isNull(row)) return null;
+    final elementNode = _variantElementNode(node);
+    final elements = <VariantValue>[];
+    for (var i = column.offsets[row]; i < column.offsets[row + 1]; i++) {
+      final value = _variantFromColumn(
+        elementNode,
+        column.child,
+        i,
+        columnFor,
+        assemble,
+        metadata,
+      );
+      if (value == null) {
+        throw ParquetFormatException(
+          'missing shredded VARIANT array element at ${node.dotPath}[$row]',
+        );
+      }
+      elements.add(value);
+    }
+    return VariantArray(elements);
+  }
+  if (kind == LogicalTypeKind.map) {
     throw ParquetUnsupportedException(
-      'shredded VARIANT array ${node.dotPath} is not supported in v0.2.0',
+      'shredded VARIANT map ${node.dotPath} is not supported',
     );
   }
-  final kind = node.logicalType?.kind;
-  if (kind == LogicalTypeKind.list || kind == LogicalTypeKind.map) {
+  if (node.isRepeated) {
     throw ParquetUnsupportedException(
-      'shredded VARIANT ${kind?.name} ${node.dotPath} is not supported in '
-      'v0.2.0',
+      'shredded VARIANT repeated group ${node.dotPath} is not supported',
     );
   }
   final fields = <String, VariantValue>{};
@@ -208,19 +246,135 @@ VariantValue? _variantTypedAt(
       if (child.name == 'typed_value') typedChild = child;
     }
     VariantValue? value;
-    if (typedChild != null) value = _variantTypedAt(typedChild, row, columnFor);
+    if (typedChild != null) {
+      value = _variantTypedAt(typedChild, row, columnFor, assemble, metadata);
+    }
     if (value == null && valueChild != null) {
       final valueColumn = columnFor(valueChild);
       if (!valueColumn.isNull(row)) {
-        throw ParquetFormatException(
-          'partially shredded VARIANT ${field.dotPath} value is not '
-          'reconstructable yet',
+        value = VariantCodec.decode(
+          (valueColumn as BinaryColumn).getBytes(row),
+          metadata,
         );
       }
     }
     if (value != null) fields[field.name] = value;
   }
   return VariantObject(fields);
+}
+
+SchemaNode _variantElementNode(SchemaNode listNode) {
+  for (final child in listNode.children) {
+    if (!child.isRepeated) continue;
+    if (child.children.length == 1) return child.children.first;
+  }
+  throw ParquetFormatException(
+    'malformed shredded VARIANT list ${listNode.dotPath}',
+  );
+}
+
+VariantValue? _variantFromColumn(
+  SchemaNode node,
+  ParquetColumn column,
+  int row,
+  ParquetColumn Function(SchemaNode) columnFor,
+  ParquetColumn Function(SchemaNode) assemble,
+  VariantMetadata metadata,
+) {
+  if (column.isNull(row)) return null;
+  if (node.isLeaf) {
+    return _variantPrimitive(node, column.value(row), column, row);
+  }
+  final kind = node.logicalType?.kind;
+  if (kind == LogicalTypeKind.list) {
+    if (column is! ListColumn) return null;
+    final elementNode = _variantElementNode(node);
+    final elements = <VariantValue>[];
+    for (var i = column.offsets[row]; i < column.offsets[row + 1]; i++) {
+      final value = _variantFromColumn(
+        elementNode,
+        column.child,
+        i,
+        columnFor,
+        assemble,
+        metadata,
+      );
+      if (value == null) {
+        throw ParquetFormatException(
+          'missing shredded VARIANT array element at ${node.dotPath}[$row]',
+        );
+      }
+      elements.add(value);
+    }
+    return VariantArray(elements);
+  }
+  if (column is StructColumn) {
+    final directValue = column.fields['value'];
+    final directTyped = column.fields['typed_value'];
+    if (directValue != null || directTyped != null) {
+      SchemaNode? valueChild;
+      SchemaNode? typedChild;
+      for (final child in node.children) {
+        if (child.name == 'value') valueChild = child;
+        if (child.name == 'typed_value') typedChild = child;
+      }
+      if (typedChild != null &&
+          directTyped != null &&
+          !directTyped.isNull(row)) {
+        return _variantFromColumn(
+          typedChild,
+          directTyped,
+          row,
+          columnFor,
+          assemble,
+          metadata,
+        );
+      }
+      if (valueChild != null &&
+          directValue != null &&
+          !directValue.isNull(row)) {
+        return VariantCodec.decode(
+          (directValue as BinaryColumn).getBytes(row),
+          metadata,
+        );
+      }
+      return null;
+    }
+    final fields = <String, VariantValue>{};
+    for (final field in node.children) {
+      final valueColumn = column.fields['value'];
+      final typedColumn = column.fields['typed_value'];
+      SchemaNode? valueChild;
+      SchemaNode? typedChild;
+      for (final child in field.children) {
+        if (child.name == 'value') valueChild = child;
+        if (child.name == 'typed_value') typedChild = child;
+      }
+      VariantValue? value;
+      if (typedChild != null &&
+          typedColumn != null &&
+          !typedColumn.isNull(row)) {
+        value = _variantFromColumn(
+          typedChild,
+          typedColumn,
+          row,
+          columnFor,
+          assemble,
+          metadata,
+        );
+      } else if (valueChild != null &&
+          valueColumn != null &&
+          !valueColumn.isNull(row)) {
+        value = VariantCodec.decode(
+          (valueColumn as BinaryColumn).getBytes(row),
+          metadata,
+        );
+      }
+      if (value != null) fields[field.name] = value;
+    }
+    return VariantObject(fields);
+  }
+  return null;
 }
 
 VariantValue _variantPrimitive(
