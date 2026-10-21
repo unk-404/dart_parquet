@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0
+
+- Full arbitrary Dremel nesting: list of list/map, map of list/map, struct in
+  list/map, bare repeated leaf/group, legacy two-level LIST rules, MAP without
+  value and MAP_KEY_VALUE.
+- VARIANT: binary metadata/value codec, JSON conversion, unshredded write, and
+  shredded read reconstruction for primitives, nested objects and arrays.
+- ALP encoding 10 for FLOAT/DOUBLE: reader, opt-in writer `enableAlp`, and
+  bit-exact fixture verification.
+- CDC helpers: `CdcTable` / `ChangeType` for `_change_type`,
+  `_commit_version` and `_commit_timestamp`.
+- `RecordBatch` / `ColumnVector` batch API with `readBatchSync`, `readBatch`
+  and `readBatches`.
+- Crash-safe `ParquetStreamWriter.resume` and `fileMetaData`; shared footer
+  builder; sidecar metadata round-trip.
+- Persistent worker pool for parallel row-group reads.
+- Multi-page level/value preallocation, dictionary materialization, zero-copy
+  PLAIN typed views and nullable BYTE_ARRAY scan removal.
+- `ParquetFeature` / `ParquetUnsupportedFeatureException`, encryption and
+  geospatial extension points.
+- `created_by` now reports `parquet-dart version 0.2.0`.
+
 ## 0.1.3
 
 - Added `ParquetStreamWriter(schema, BytesFile)`: `add()` writes row groups

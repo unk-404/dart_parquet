@@ -46,7 +46,7 @@ void main() {
 
       final defaultBytes = await writeTwice(
         nested,
-        const ParquetWriterOptions(),
+        const ParquetWriterOptions(createdBy: 'parquet-dart version 0.1.3'),
       );
       expect(defaultBytes.length, 13462);
       expect(_fnv(defaultBytes), 1623461065);
@@ -58,6 +58,7 @@ void main() {
           writeCrc: true,
           writePageIndex: true,
           writeBloomFilter: true,
+          createdBy: 'parquet-dart version 0.1.3',
         ),
       );
       expect(featureBytes.length, 35948);
@@ -72,6 +73,7 @@ void main() {
           writeCrc: true,
           writePageIndex: true,
           writeBloomFilter: true,
+          createdBy: 'parquet-dart version 0.1.3',
         ),
       );
       expect(zstdBytes.length, 109332);

@@ -17,7 +17,7 @@ OPFS, IndexedDB, browser `Blob`/`File` and HTTP Range sources.
 
 ```yaml
 dependencies:
-  parquet: ^0.1.3
+  parquet: ^0.2.0
 ```
 
 ```sh
@@ -217,16 +217,19 @@ final source = await openSourceWithStrategy(
 | Item | Support |
 |---|---|
 | Physical types | BOOLEAN, INT32, INT64, INT96, FLOAT, DOUBLE, BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY |
-| Logical types | string, decimal, date/time/timestamp, integer, enum, JSON, BSON, UUID, float16, LIST/MAP |
+| Logical types | string, decimal, date/time/timestamp, integer, enum, JSON, BSON, UUID, float16, LIST/MAP, VARIANT |
 | Pages | data page v1/v2, dictionary pages |
 | Compression | uncompressed, Snappy, Gzip, LZO, Brotli, Zstd, LZ4_RAW; legacy LZ4 read |
-| Encodings | PLAIN, dictionary/RLE, DELTA_*, BYTE_STREAM_SPLIT; PLAIN/dictionary write |
-| Schemas | flat and common nested LIST/STRUCT/MAP |
+| Encodings | PLAIN, dictionary/RLE, DELTA_*, BYTE_STREAM_SPLIT, ALP; PLAIN/dictionary/ALP write |
+| Schemas | arbitrary LIST/STRUCT/MAP nesting, legacy lists, bare repeated fields, map without value |
 | Metadata | statistics, page indexes, Bloom filters, CRC32 |
+| Variant | unshredded + shredded read (primitive/object/array); unshredded write |
+| CDC | `_change_type` / `_commit_version` / `_commit_timestamp` typed helpers |
 
-Encrypted files, geospatial types, Variant, ALP and CDC are not supported.
-Nested shapes outside the supported LIST/STRUCT/MAP matrix are rejected with a
-typed exception rather than returning incorrect data.
+Encrypted files and geospatial codecs are reserved extension points: metadata is
+preserved and unsupported access returns a typed
+`ParquetUnsupportedFeatureException`. Shredded VARIANT schemas are read but are
+rejected for writing until typed-value shredding is implemented.
 
 ## Benchmarks
 
@@ -236,9 +239,10 @@ writes and multi-isolate/multi-thread variants. The harness lives in
 [`benchmark/`](benchmark/); the Rust counterpart is in
 [`benchmark/rust`](benchmark/rust) and is pinned to `parquet = "=60.0.0"`.
 
-v0.1.3 adds zero-copy fast paths for fully-valid flat columns and direct
-column-to-page writing for large flat tables, while keeping the public API and
-small-table defaults unchanged.
+v0.2.0 adds Variant/ALP/CDC support, arbitrary Dremel nesting, a `RecordBatch`
+streaming API, crash-safe stream resume, persistent worker pools and multi-page
+zero-copy fast paths. Small-table writer defaults remain byte-compatible with
+v0.1.3.
 
 ## Development
 

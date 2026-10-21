@@ -87,10 +87,10 @@ void main() {
       expect(explicit, writeParquetTable(table, options: oldBy));
     });
 
-    test('default created_by is the v0.1.3 value', () {
+    test('default created_by is the v0.2.0 value', () {
       final bytes = writeParquetTable(_flat());
       final reader = ParquetReader.fromBytes(bytes);
-      expect(reader.createdBy, 'parquet-dart version 0.1.3');
+      expect(reader.createdBy, 'parquet-dart version 0.2.0');
       expect(reader.metadata.rowGroup(0).column(0).offsetIndexOffset, isNull);
     });
   });

@@ -85,14 +85,37 @@ final class ParquetReader {
   int get version => metadata.version;
   String? get createdBy => metadata.createdBy;
 
+  /// Metadata cache for immutable in-memory buffers.
+  ///
+  /// Parquet footers are often read repeatedly. The cache is keyed by the
+  /// backing [ByteBuffer] and is weak, so a buffer can be collected normally.
+  /// Call [clearMetadataCache] if a buffer is mutated in place and must be
+  /// parsed again.
+  static Expando<ParquetMetadata> _metadataCache =
+      Expando<ParquetMetadata>('parquet.metadata');
+
+  /// Drops all cached in-memory metadata.
+  static void clearMetadataCache() {
+    _metadataCache = Expando<ParquetMetadata>('parquet.metadata');
+  }
+
   /// Reads a footer from an in-memory buffer.
+  ///
+  /// The buffer is treated as immutable while readers may reference it; this
+  /// is required by the zero-copy column views. Repeated calls with the same
+  /// backing buffer reuse the parsed metadata.
   factory ParquetReader.fromBytes(
     Uint8List bytes, {
     ParquetReaderOptions options = const ParquetReaderOptions(),
   }) {
     final source = MemorySource.fromUint8List(bytes);
+    final cached = _metadataCache[bytes];
+    if (cached != null) {
+      return ParquetReader._(cached, source, null, options, bytes: bytes);
+    }
     final footer = _readFooterSync(source);
     final metadata = ParquetMetadata.fromFileMetaData(footer.fileMetadata);
+    _metadataCache[bytes] = metadata;
     return ParquetReader._(metadata, source, null, options, bytes: bytes);
   }
 
@@ -450,3 +473,4 @@ Future<Footer> _readFooterAsync(ParquetSource source) async {
   );
   return parseFooter(footerBytes);
 }
+
