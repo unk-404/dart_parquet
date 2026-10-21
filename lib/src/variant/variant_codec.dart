@@ -590,13 +590,8 @@ int _unsignedSize(int value) {
 }
 
 void _checkSigned64(int value, String what) {
-  if (value < -9223372036854775808 || value > 9223372036854775807) {
-    throw ArgumentError.value(
-      value,
-      what,
-      'does not fit in a signed 64-bit value',
-    );
-  }
+  // Dart `int` is signed 64-bit on the VM and at most 53-bit on the web, so
+  // every representable value already fits. Keep the call site for clarity.
 }
 
 void _writeLength(BytesBuilder builder, int length) {

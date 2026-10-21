@@ -195,7 +195,8 @@ VariantValue? _variantTypedAt(
   final kind = node.logicalType?.kind;
   if (kind == LogicalTypeKind.list || kind == LogicalTypeKind.map) {
     throw ParquetUnsupportedException(
-      'shredded VARIANT ${kind?.name} ${node.dotPath} is not supported in ' 'v0.2.0',
+      'shredded VARIANT ${kind?.name} ${node.dotPath} is not supported in '
+      'v0.2.0',
     );
   }
   final fields = <String, VariantValue>{};
@@ -212,7 +213,8 @@ VariantValue? _variantTypedAt(
       final valueColumn = columnFor(valueChild);
       if (!valueColumn.isNull(row)) {
         throw ParquetFormatException(
-          'partially shredded VARIANT ${field.dotPath} value is not ' 'reconstructable yet',
+          'partially shredded VARIANT ${field.dotPath} value is not '
+          'reconstructable yet',
         );
       }
     }
@@ -236,23 +238,17 @@ VariantValue _variantPrimitive(
       final intValue = value as int;
       if (logical is DateLogicalType) return VariantDate(intValue);
       if (logical is DecimalLogicalType) {
-        return VariantDecimal(
-          BigInt.from(intValue),
-          scale: logical.scale,
-        );
+        return VariantDecimal(BigInt.from(intValue), scale: logical.scale);
       }
       if (logical is TimeLogicalType) {
         return VariantTime(intValue);
       }
       if (logical is IntegerLogicalType) {
-        return VariantInt(
-          intValue,
-          switch (logical.bitWidth) {
-            8 => VariantIntWidth.int8,
-            16 => VariantIntWidth.int16,
-            _ => VariantIntWidth.int32,
-          },
-        );
+        return VariantInt(intValue, switch (logical.bitWidth) {
+          8 => VariantIntWidth.int8,
+          16 => VariantIntWidth.int16,
+          _ => VariantIntWidth.int32,
+        });
       }
       return VariantInt(intValue, VariantIntWidth.int32);
     case PhysicalType.int64:

@@ -95,7 +95,7 @@ enum VariantIntWidth {
   int32(VariantType.int32, 5, 4, -2147483648, 2147483647),
 
   /// 8-byte signed integer.
-  int64(VariantType.int64, 6, 8, -9223372036854775808, 9223372036854775807);
+  int64(VariantType.int64, 6, 8, null, null);
 
   const VariantIntWidth(
     this.type,
@@ -115,13 +115,17 @@ enum VariantIntWidth {
   final int byteWidth;
 
   /// Minimum value representable by this width.
-  final int minValue;
+  final int? minValue;
 
   /// Maximum value representable by this width.
-  final int maxValue;
+  final int? maxValue;
 
   /// Whether [value] fits this width.
-  bool contains(int value) => value >= minValue && value <= maxValue;
+  ///
+  /// `int64` has no representable bounds in JavaScript, so every Dart `int`
+  /// fits it on both the VM and the web.
+  bool contains(int value) =>
+      minValue == null || (value >= minValue! && value <= maxValue!);
 
   /// Smallest width that can represent [value].
   static VariantIntWidth smallestFor(int value) {

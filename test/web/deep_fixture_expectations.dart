@@ -486,10 +486,7 @@ ParquetTable tableOf(
   int numRows,
 ) => ParquetTable(schema: schema, columns: columns, numRows: numRows);
 
-const SchemaElement schemaRoot = SchemaElement(
-  name: 'schema',
-  numChildren: 1,
-);
+const SchemaElement schemaRoot = SchemaElement(name: 'schema', numChildren: 1);
 
 /// Writes [table] in memory and reads it back (single row group).
 ParquetTable roundTrip(
@@ -499,4 +496,36 @@ ParquetTable roundTrip(
   final writer = ParquetWriter(schema: table.schema, options: options);
   writer.add(table);
   return ParquetReader.fromBytes(writer.finish()).readTableSync();
+}
+
+/// Asserts that [actual] has the same columns/classes/values as [expected].
+void expectTablesEquivalent(
+  ParquetTable expected,
+  ParquetTable actual, {
+  String? reason,
+}) {
+  final label = reason ?? '';
+  expect(actual.numRows, expected.numRows, reason: '$label row count');
+  expect(
+    actual.columns.map((column) => column.name).toList(),
+    expected.columns.map((column) => column.name).toList(),
+    reason: '$label column names',
+  );
+  expect(
+    actual.columns.map((column) => column.runtimeType).toList(),
+    expected.columns.map((column) => column.runtimeType).toList(),
+    reason: '$label column classes',
+  );
+  for (var i = 0; i < expected.columns.length; i++) {
+    final a = expected.columns[i];
+    final b = actual.columns[i];
+    expect(b.length, a.length, reason: '$label ${a.name} length');
+    for (var row = 0; row < a.length; row++) {
+      expect(
+        canonicalize(b.value(row)),
+        canonicalize(a.value(row)),
+        reason: '$label ${a.name} row $row',
+      );
+    }
+  }
 }
