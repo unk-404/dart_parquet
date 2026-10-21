@@ -854,6 +854,10 @@ VariantValue _fromJson(Object? json, int depth, int maxDepth) {
   }
   if (json == null) return const VariantNull();
   if (json is bool) return VariantBoolean(json);
+  // On dart2js `-0.0` also satisfies `is int`; preserve the sign explicitly.
+  if (json is num && json == 0 && json.isNegative) {
+    return VariantDouble(json.toDouble());
+  }
   if (json is int) return VariantInt(json);
   if (json is double) return VariantDouble(json);
   if (json is String) return VariantString(json);

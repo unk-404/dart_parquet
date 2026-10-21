@@ -30,6 +30,7 @@ Object? canonicalize(Object? value) {
   if (value is List) {
     return <Object?>[for (final item in value) canonicalize(item)];
   }
+  if (value is int) return BigInt.from(value);
   return value;
 }
 
