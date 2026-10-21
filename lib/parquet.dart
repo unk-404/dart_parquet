@@ -31,6 +31,7 @@ export 'src/predicate/predicate.dart';
 export 'src/reader.dart';
 export 'src/schema/schema.dart';
 export 'src/table/column.dart';
+export 'src/table/record_batch.dart';
 export 'src/table/table.dart';
 export 'src/variant/variant.dart';
 export 'src/writer/writer.dart';

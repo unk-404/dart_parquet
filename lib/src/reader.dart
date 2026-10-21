@@ -1,6 +1,7 @@
 /// High-level Parquet reader.
 library;
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'column/page_reader.dart';
@@ -12,6 +13,7 @@ import 'predicate/predicate.dart';
 import 'schema/projection.dart';
 import 'table/column.dart';
 import 'table/nested_assembler.dart';
+import 'table/record_batch.dart';
 import 'table/table.dart';
 import 'feature.dart';
 import 'table/table_concat.dart';
@@ -188,6 +190,38 @@ final class ParquetReader {
       }
     }
     return ParquetTable(schema: projection.schema, columns: out, numRows: rows);
+  }
+
+  /// Reads one row group as a [RecordBatch] synchronously.
+  RecordBatch readBatchSync(int index, {List<String>? columns, int? maxRows}) =>
+      RecordBatch.fromTable(
+        readRowGroupSync(index, columns: columns, maxRows: maxRows),
+      );
+
+  /// Reads one row group as a [RecordBatch] asynchronously.
+  Future<RecordBatch> readBatch(
+    int index, {
+    List<String>? columns,
+    int? maxRows,
+  }) async => RecordBatch.fromTable(
+    await readRowGroup(index, columns: columns, maxRows: maxRows),
+  );
+
+  /// Streams one [RecordBatch] per row group.
+  Stream<RecordBatch> readBatches({
+    List<String>? columns,
+    int? maxRows,
+    RowGroupFilter? rowGroupFilter,
+    ParquetPredicate? predicate,
+  }) async* {
+    await for (final table in readRowGroups(
+      columns: columns,
+      maxRows: maxRows,
+      rowGroupFilter: rowGroupFilter,
+      predicate: predicate,
+    )) {
+      yield RecordBatch.fromTable(table);
+    }
   }
 
   /// Reads all row groups synchronously and concatenates their columns.
