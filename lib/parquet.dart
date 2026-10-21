@@ -20,6 +20,8 @@ export 'src/format/enums.dart'
         FieldRepetitionType,
         PageType,
         PhysicalType;
+export 'src/cdc/cdc.dart';
+export 'src/feature.dart';
 export 'src/format/logical_type.dart';
 export 'src/io/io.dart';
 export 'src/io/source.dart';
@@ -30,6 +32,7 @@ export 'src/reader.dart';
 export 'src/schema/schema.dart';
 export 'src/table/column.dart';
 export 'src/table/table.dart';
+export 'src/variant/variant.dart';
 export 'src/writer/writer.dart';
 export 'src/util/bytes.dart' show Bytes, Uint64;
 export 'src/util/errors.dart';

@@ -34,16 +34,6 @@ EXPECTED = os.path.join(FIXTURES, "expected")
 
 # Fixtures the current reader rejects with a typed exception by design.
 UNSUPPORTED = {
-    "nested_lists.snappy.parquet",
-    "nested_maps.snappy.parquet",
-    "nullable.impala.parquet",
-    "nonnullable.impala.parquet",
-    # Bare repeated fields; this file also has legacy FileMetaData.num_rows=0
-    # which v0.1.2 tolerates (row groups sum to 6), so the schema check wins.
-    "repeated_no_annotation.parquet",
-    "repeated_primitive_no_list.parquet",
-    "map_no_value.parquet",
-    "old_list_structure.parquet",
     "encrypt_columns_and_footer.parquet.encrypted",
     "uniform_encryption.parquet.encrypted",
 }
@@ -68,15 +58,17 @@ MANUAL = {
 # Reader tolerates an out-of-spec UUID annotation on INT32; pyarrow reports
 # it as Undefined, so restore the declared kind (handled in gen_values).
 
-# File-specific exception overrides: map_no_value is a MAP shape gap rejected
-# as a format error rather than an unsupported annotation.
-EXCEPTION_OVERRIDES = {
-    "map_no_value.parquet": "ParquetFormatException",
-}
+# File-specific exception overrides.
+EXCEPTION_OVERRIDES = {}
 
 # Known accepted-reader gaps: expected JSON is metadata-only and the Dart test
 # skips the value assertions with the recorded reason.
-KNOWN_GAPS: dict[str, str] = {}
+KNOWN_GAPS: dict[str, str] = {
+    "map_no_value.parquet":
+        "pyarrow canonicalizes a MAP without values as a key list",
+    "repeated_no_annotation.parquet":
+        "legacy FileMetaData.num_rows=0 while the row group has 6 rows",
+}
 
 EXCEPTION_BY_KIND = {
     "unsupported": "ParquetUnsupportedException",
@@ -348,3 +340,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -27,6 +27,7 @@ final class ParquetWriterOptions {
     this.writeBloomFilter = false,
     this.bloomFilterFpp = 0.01,
     this.bloomFilterMaxBytes = 1024 * 1024,
+    this.enableAlp = false,
   });
 
   /// Page compression codec.
@@ -81,6 +82,12 @@ final class ParquetWriterOptions {
   ///
   /// Must be at least 32; the actual size is rounded down to a power of two.
   final int bloomFilterMaxBytes;
+
+  /// Whether FLOAT/DOUBLE pages use ALP (Parquet encoding 10).
+  ///
+  /// ALP is a preview encoding and defaults to `false`; readers that do not
+  /// implement ALP will reject the file.
+  final bool enableAlp;
 
   /// Resolved codec implementation for [compression].
   CompressionCodec get codec => codecFor(compression);

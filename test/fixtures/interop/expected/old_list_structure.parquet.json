@@ -1,14 +1,7 @@
 {
  "file": "official/old_list_structure.parquet",
- "kind": "unsupported",
+ "kind": "values",
  "writer_family": "parquet-mr",
- "pyarrow": {
-  "ok": true,
-  "read_ok": true,
-  "version": "26.0.0",
-  "error": null,
-  "read_error": null
- },
  "meta": {
   "rows": 1,
   "row_groups": 1,
@@ -26,5 +19,23 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "ListColumn",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "3c6669ee6e00252d",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "[[1,2],[3,4]]"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
 }

@@ -64,6 +64,7 @@ const Set<Encoding> _supportedEncodings = <Encoding>{
   Encoding.deltaByteArray,
   Encoding.rleDictionary,
   Encoding.byteStreamSplit,
+  Encoding.alp,
 };
 
 /// Whether [encoding] is supported by the read-side decoders.
@@ -123,6 +124,15 @@ void validateEncodingForPhysicalType(
       throw ParquetUnsupportedException(
         'BYTE_STREAM_SPLIT is only supported for FLOAT, DOUBLE, INT32, '
         'INT64 and FIXED_LEN_BYTE_ARRAY, got $physicalType',
+      );
+    }
+    return;
+  }
+  if (encoding == Encoding.alp) {
+    if (physicalType != PhysicalType.float &&
+        physicalType != PhysicalType.double) {
+      throw ParquetUnsupportedException(
+        'ALP is only defined for FLOAT and DOUBLE, got $physicalType',
       );
     }
     return;

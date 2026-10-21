@@ -82,7 +82,28 @@ $files = @(
   'bad_data/ARROW-RS-GH-11261-FLBA-DICT.parquet',
   'bad_data/ARROW-RS-GH-6229-DICTHEADER.parquet',
   'bad_data/ARROW-RS-GH-6229-LEVELS.parquet',
-  'bad_data/PARQUET-1481.parquet'
+  'bad_data/PARQUET-1481.parquet',
+  # v0.2.0 assets: Variant (shredded_variant) and ALP.
+  'shredded_variant/case-005.parquet',
+  'shredded_variant/case-005_row-0.variant.bin',
+  'shredded_variant/case-006.parquet',
+  'shredded_variant/case-006_row-0.variant.bin',
+  'shredded_variant/case-044.parquet',
+  'shredded_variant/case-044_row-0.variant.bin',
+  'shredded_variant/case-047.parquet',
+  'shredded_variant/case-047_row-0.variant.bin',
+  'shredded_variant/case-048.parquet',
+  'shredded_variant/case-048_row-0.variant.bin',
+  'shredded_variant/case-049.parquet',
+  'shredded_variant/case-049_row-0.variant.bin',
+  'shredded_variant/case-050.parquet',
+  'shredded_variant/case-050_row-0.variant.bin',
+  'shredded_variant/case-130.parquet',
+  'shredded_variant/case-130_row-0.variant.bin',
+  'shredded_variant/cases.json',
+  'shredded_variant/README.md',
+  'variant/README.md',
+  'data/alp_extended.zstd.parquet'
 )
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
@@ -122,4 +143,37 @@ if ($Verify) {
     Write-Error "$failures fixture(s) failed provenance verification"
   }
   Write-Host "provenance verified against expected/manifest.json"
+
+  # v0.2.0 Variant/ALP assets (see test/fixtures/interop/v0.2/manifest.json).
+  $v02Path = Join-Path $PSScriptRoot '../../test/fixtures/interop/v0.2/manifest.json'
+  $v02 = Get-Content $v02Path -Raw | ConvertFrom-Json
+  foreach ($entry in $v02.variant) {
+    foreach ($pair in @(@($entry.parquet, $entry.parquet_sha256),
+                        @($entry.variant_bin, $entry.variant_bin_sha256))) {
+      $upstream = 'shredded_variant/' + (Split-Path $pair[0] -Leaf)
+      $local = Join-Path $OutDir $upstream
+      if (-not (Test-Path $local)) {
+        Write-Host "MISSING $upstream"
+        $failures++
+        continue
+      }
+      $actual = (Get-FileHash -Algorithm SHA256 $local).Hash.ToLowerInvariant()
+      if ($actual -ne $pair[1]) {
+        Write-Host "HASH MISMATCH $upstream"
+        $failures++
+      }
+    }
+  }
+  $alpLocal = Join-Path $OutDir 'data/alp_extended.zstd.parquet'
+  if (-not (Test-Path $alpLocal)) {
+    Write-Host 'MISSING data/alp_extended.zstd.parquet'
+    $failures++
+  } elseif ((Get-FileHash -Algorithm SHA256 $alpLocal).Hash.ToLowerInvariant() -ne $v02.alp.sha256) {
+    Write-Host 'HASH MISMATCH data/alp_extended.zstd.parquet'
+    $failures++
+  }
+  if ($failures -gt 0) {
+    Write-Error "$failures fixture(s) failed provenance verification"
+  }
+  Write-Host "provenance verified against v0.2/manifest.json"
 }

@@ -177,8 +177,8 @@ void main() {
     });
   });
 
-  group('unsupported schema shapes', () {
-    test('list of list is rejected', () {
+  group('schema shape validation', () {
+    test('list of list is accepted', () {
       expect(
         () => ParquetWriter(
           schema: _schemaOf([
@@ -212,11 +212,11 @@ void main() {
             ),
           ]),
         ),
-        throwsA(isA<ParquetUnsupportedException>()),
+        returnsNormally,
       );
     });
 
-    test('map with a struct value is rejected', () {
+    test('map with a struct value is accepted', () {
       expect(
         () => ParquetWriter(
           schema: _schemaOf([
@@ -249,11 +249,11 @@ void main() {
             ),
           ]),
         ),
-        throwsA(isA<ParquetUnsupportedException>()),
+        returnsNormally,
       );
     });
 
-    test('list inside a struct is rejected', () {
+    test('list inside a struct is accepted', () {
       expect(
         () => ParquetWriter(
           schema: _schemaOf([
@@ -281,11 +281,11 @@ void main() {
             ),
           ]),
         ),
-        throwsA(isA<ParquetUnsupportedException>()),
+        returnsNormally,
       );
     });
 
-    test('bare repeated group is rejected', () {
+    test('bare repeated group is accepted', () {
       expect(
         () => ParquetWriter(
           schema: _schemaOf([
@@ -302,11 +302,11 @@ void main() {
             ),
           ]),
         ),
-        throwsA(isA<ParquetUnsupportedException>()),
+        returnsNormally,
       );
     });
 
-    test('bare repeated leaf is rejected', () {
+    test('bare repeated leaf is accepted', () {
       expect(
         () => ParquetWriter(
           schema: _schemaOf([
@@ -318,7 +318,7 @@ void main() {
             ),
           ]),
         ),
-        throwsA(isA<ParquetUnsupportedException>()),
+        returnsNormally,
       );
     });
 

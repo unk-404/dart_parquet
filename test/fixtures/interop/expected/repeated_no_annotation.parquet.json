@@ -1,6 +1,6 @@
 {
  "file": "official/repeated_no_annotation.parquet",
- "kind": "unsupported",
+ "kind": "gap",
  "writer_family": "arrow-rs",
  "pyarrow": {
   "ok": true,
@@ -46,5 +46,5 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "gap": "legacy FileMetaData.num_rows=0 while the row group has 6 rows"
 }

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import '../compression/codec.dart';
 import '../compression/registry.dart';
+import '../encodings/alp.dart';
 import '../encodings/encoding.dart';
 import '../encodings/levels.dart';
 import '../encodings/rle.dart';
@@ -446,9 +447,7 @@ final class ColumnChunkReader {
       case Encoding.bitPacked:
         throw ParquetUnsupportedException('BIT_PACKED is not a value encoding');
       case Encoding.alp:
-        throw ParquetUnsupportedException(
-          'ALP encoding is not supported in v0.1.0',
-        );
+        return decodeAlp(data, type: descriptor.physicalType, numValues: count);
     }
   }
 }

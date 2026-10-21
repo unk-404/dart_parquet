@@ -13,6 +13,7 @@ library;
 
 import 'dart:typed_data';
 
+import '../feature.dart';
 import '../util/bytes.dart';
 import '../util/errors.dart';
 import 'parquet_format.dart';
@@ -108,7 +109,8 @@ Footer parseFooter(Bytes tailOrWholeFile) {
   final trailingMagic = _magicAt(bytes, length - 4);
 
   if (trailingMagic == parquetEncryptedMagic) {
-    throw ParquetUnsupportedException(
+    throw ParquetUnsupportedFeatureException(
+      ParquetFeature.encryption,
       'Parquet files with an encrypted footer (PARE) are not supported',
     );
   }
@@ -134,7 +136,8 @@ Footer parseFooter(Bytes tailOrWholeFile) {
   if (metadataOffset >= 4) {
     final leadingMagic = _magicAt(bytes, 0);
     if (leadingMagic == parquetEncryptedMagic) {
-      throw ParquetUnsupportedException(
+      throw ParquetUnsupportedFeatureException(
+        ParquetFeature.encryption,
         'Parquet files with an encrypted footer (PARE) are not supported',
       );
     }

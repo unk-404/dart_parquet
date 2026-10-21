@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:blit/blit.dart' show Bytes;
 
 import '../util/int64.dart';
+import '../variant/variant.dart';
 
 /// Bit-packed validity bitmap (1 = valid, 0 = null).
 final class Validity {
@@ -197,6 +198,26 @@ final class BinaryColumn extends ParquetColumn {
     if (isUtf8) return getString(index);
     return getBytes(index);
   }
+}
+
+/// A VARIANT-annotated group column.
+///
+/// Each row holds a decoded [Variant] (metadata + value). The original binary
+/// components remain available via [Variant.metadataBytes] and
+/// [Variant.valueBytes].
+final class VariantColumn extends ParquetColumn {
+  VariantColumn({
+    required super.name,
+    required this.values,
+    required super.validity,
+  }) : super(length: validity.length);
+
+  final List<Variant?> values;
+
+  Variant? getVariant(int index) => isNull(index) ? null : values[index];
+
+  @override
+  Object? value(int index) => getVariant(index);
 }
 
 final class FixedLenColumn extends ParquetColumn {

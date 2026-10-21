@@ -1,6 +1,6 @@
 {
  "file": "official/map_no_value.parquet",
- "kind": "unsupported",
+ "kind": "gap",
  "writer_family": "arrow-rs",
  "pyarrow": {
   "ok": true,
@@ -56,5 +56,5 @@
    "precision": null
   }
  ],
- "exception": "ParquetFormatException"
+ "gap": "pyarrow canonicalizes a MAP without values as a key list"
 }

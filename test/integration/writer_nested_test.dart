@@ -80,7 +80,7 @@ void main() {
       }
     });
 
-    test('legacy bare repeated leaf is rejected as unsupported', () {
+    test('legacy bare repeated leaf is accepted', () {
       final schema = ParquetSchema.fromSchemaElements([
         const SchemaElement(name: 'schema', numChildren: 1),
         const SchemaElement(
@@ -89,10 +89,7 @@ void main() {
           name: 'vals',
         ),
       ]);
-      expect(
-        () => ParquetWriter(schema: schema),
-        throwsA(isA<ParquetUnsupportedException>()),
-      );
+      expect(() => ParquetWriter(schema: schema), returnsNormally);
     });
 
     test('nested projection still reads written files', () {

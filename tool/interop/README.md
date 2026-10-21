@@ -7,6 +7,7 @@ Bidirectional verification for the Dart Parquet reader/writer.
 | `fetch_parquet_testing.ps1` | Re-download the pinned apache/parquet-testing subset over HTTPS and verify SHA-256 provenance. |
 | `make_pyarrow_fixture.py` | Regenerate `test/fixtures/interop/generated/*.parquet` with pyarrow (multi-row-group flat+nested, DataPage v1/v2). |
 | `gen_expected.py` | Generate `test/fixtures/interop/expected/*.json` (schema, canonical checksums, samples) from pyarrow. |
+| `gen_v02_expected.py` | Generate v0.2.0 expectations for the Variant/ALP assets: physical Variant structs + upstream semantic text, ALP PLAIN-reference values, engine support and the v0.2 manifest (including deep-nesting entries). |
 | `interop_canon.py` | Python canonical value encoding + FNV-1a checksums (twin of the Dart file below). |
 | `interop_canonical.dart` | Dart canonical value encoding + FNV-1a checksums, shared by tests and the writer harness. |
 | `write_matrix.dart` | Write flat+nested fixtures with the public Dart writer across all codecs, page versions and dictionary on/off; emits `writer_matrix.json`. |
@@ -32,6 +33,10 @@ dart test test/interop -j4
 # Regenerate fixtures/expectations (only when fixtures or pyarrow change)
 .agents/venv/Scripts/python.exe tool/interop/make_pyarrow_fixture.py
 .agents/venv/Scripts/python.exe tool/interop/gen_expected.py
+.agents/venv/Scripts/python.exe tool/interop/gen_v02_expected.py
+
+# Fetch + provenance check (v0.1.2 subset and v0.2.0 Variant/ALP assets)
+pwsh tool/interop/fetch_parquet_testing.ps1 -Verify
 
 # Bidirectional writer verification
 dart run tool/interop/write_matrix.dart
@@ -98,5 +103,29 @@ provenance, licenses and expected outcomes. `test/interop/` contains:
 
 `dart test test/interop -j4` runs 143 tests; the full repository suite is
 727 tests. `dart analyze` is clean.
+
+## v0.2.0 assets (Variant / ALP)
+
+`gen_v02_expected.py` consumes the committed assets under
+`test/fixtures/interop/v0.2/` and writes `v0.2/expected/*.json` plus
+`v0.2/manifest.json`. It also records the five existing deep-nesting fixtures
+with SHA-256, current typed error and v0.2 target.
+
+Engine gaps found while generating expectations (details in
+[`test/fixtures/interop/v0.2/README.md`](../../test/fixtures/interop/v0.2/README.md)):
+
+- Variant: pyarrow 26 reads the physical struct only (no Variant semantics);
+  DuckDB 1.5 fails (`Unsupported Arrow type VARIANT`); Polars 2.0 fails
+  (`LogicalType union has no variant set`). Semantic expectations therefore
+  come from upstream `cases.json`/`.variant.bin`.
+- ALP: whole-file reads fail in pyarrow (`Unknown encoding type.`), DuckDB
+  (`TProtocolException: Invalid data`) and Polars (panic). pyarrow can read the
+  in-file PLAIN reference columns (`float_plain`, `double_plain`); those are the
+  expected values for the six ALP columns. The v0.2 Dart reader decodes all six
+  ALP columns bit-exactly against those references.
+
+The generated v0.2 files are small: 8 Variant Parquet files (864 B–3.4 KB),
+8 `.variant.bin` payloads (4–49 B), one 218,992 B ALP Parquet and ~25 KB of
+JSON/manifest.
 
 

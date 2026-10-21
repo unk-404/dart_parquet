@@ -154,7 +154,7 @@ final class ParquetWriter {
     final leaves = shredTable(
       table,
       schema,
-      fastFlat: !options.writeBloomFilter,
+      fastFlat: !options.writeBloomFilter && !options.enableAlp,
     );
 
     final rowGroupStart = _out.length;

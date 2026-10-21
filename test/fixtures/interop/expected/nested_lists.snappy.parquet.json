@@ -1,14 +1,7 @@
 {
  "file": "official/nested_lists.snappy.parquet",
- "kind": "unsupported",
+ "kind": "values",
  "writer_family": "parquet-mr",
- "pyarrow": {
-  "ok": true,
-  "read_ok": true,
-  "version": "26.0.0",
-  "error": null,
-  "read_error": null
- },
  "meta": {
   "rows": 3,
   "row_groups": 1,
@@ -36,5 +29,44 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "ListColumn",
+   "length": 3,
+   "null_count": 0,
+   "checksum": "55de86440beadb28",
+   "sample_rows": [
+    0,
+    1,
+    2
+   ],
+   "samples": [
+    "[[[\"a\",\"b\"],[\"c\"]],[null,[\"d\"]]]",
+    "[[[\"a\",\"b\"],[\"c\",\"d\"]],[null,[\"e\"]]]",
+    "[[[\"a\",\"b\"],[\"c\",\"d\"],[\"e\"]],[null,[\"f\"]]]"
+   ]
+  },
+  {
+   "name": "b",
+   "dart_class": "Int32Column",
+   "length": 3,
+   "null_count": 0,
+   "checksum": "502a8231cefe63d6",
+   "sample_rows": [
+    0,
+    1,
+    2
+   ],
+   "samples": [
+    "1",
+    "1",
+    "1"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
 }

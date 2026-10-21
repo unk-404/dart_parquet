@@ -1,0 +1,250 @@
+{
+ "file": "v0.2/alp/alp_extended.zstd.parquet",
+ "asset": "alp",
+ "bytes": 218992,
+ "sha256": "b14ebd02c6584a451a9d1ca2d09504156254a7fb7316d0abb0efce38590bedb0",
+ "meta": {
+  "rows": 9032,
+  "row_groups": 5,
+  "created_by": "parquet-cpp-arrow version 23.0.0-SNAPSHOT"
+ },
+ "columns_meta": [
+  {
+   "name": "float_plain",
+   "compression": "ZSTD",
+   "encodings": [
+    "RLE",
+    "PLAIN"
+   ],
+   "alp": false,
+   "plain_reference": true
+  },
+  {
+   "name": "double_plain",
+   "compression": "ZSTD",
+   "encodings": [
+    "RLE",
+    "PLAIN"
+   ],
+   "alp": false,
+   "plain_reference": true
+  },
+  {
+   "name": "float_alp_1024",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  },
+  {
+   "name": "double_alp_1024",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  },
+  {
+   "name": "float_alp_4096",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  },
+  {
+   "name": "double_alp_4096",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  },
+  {
+   "name": "float_alp_32",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  },
+  {
+   "name": "double_alp_32",
+   "compression": "UNCOMPRESSED",
+   "encodings": [
+    "RLE",
+    "UNKNOWN"
+   ],
+   "alp": true,
+   "plain_reference": false
+  }
+ ],
+ "leaves": [
+  {
+   "path": "float_plain",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_plain",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_alp_1024",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_alp_1024",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_alp_4096",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_alp_4096",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "float_alp_32",
+   "physical": "float",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "double_alp_32",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "reference_columns": [
+  {
+   "name": "float_plain",
+   "dart_class": "Float32Column",
+   "length": 9032,
+   "null_count": 8,
+   "checksum": "7e00e9846f22e056",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    9029,
+    9030,
+    9031
+   ],
+   "samples": [
+    "{\"f32\":\"3fa147ae\"}",
+    "{\"f32\":\"4092e148\"}",
+    "{\"f32\":\"bfb33333\"}",
+    "{\"f32\":\"de8373eb\"}",
+    "{\"f32\":\"5e90fabb\"}",
+    "{\"f32\":\"5d4cf390\"}"
+   ]
+  },
+  {
+   "name": "double_plain",
+   "dart_class": "Float64Column",
+   "length": 9032,
+   "null_count": 8,
+   "checksum": "4e31172a6429991e",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    9029,
+    9030,
+    9031
+   ],
+   "samples": [
+    "{\"f64\":\"3ff428f5c28f5c29\"}",
+    "{\"f64\":\"40125c28f5c28f5c\"}",
+    "{\"f64\":\"bff6666666666666\"}",
+    "{\"f64\":\"c3d06e7d56b40e90\"}",
+    "{\"f64\":\"43d21f57585a1c1e\"}",
+    "{\"f64\":\"43a99e7202b97a44\"}"
+   ]
+  }
+ ],
+ "engine_support": {
+  "whole_file": {
+   "pyarrow": {
+    "read": false,
+    "error": "OSError: Unknown encoding type."
+   },
+   "duckdb": {
+    "read": false,
+    "error": "Error: TProtocolException: Invalid data"
+   },
+   "polars": {
+    "read": false,
+    "error": "PanicException: called `Result::unwrap()` on an `Err` value: JoinError::Panic(Id(37), \"called `Result::unwrap()` on an `Err` value: OutOfSpec(\\\"Thrift out of range\\\")\", ...)"
+   }
+  },
+  "plain_reference_columns": {
+   "pyarrow": "readable with columns=['float_plain','double_plain']",
+   "duckdb": "not attempted with column projection",
+   "polars": "not attempted with column projection"
+  },
+  "dart": {
+   "whole_file": "readable",
+   "alp_columns_bit_exact_vs_plain": 6,
+   "note": "measured on the v0.2 development reader; all six float_alp_*/double_alp_* columns match the PLAIN reference columns bit-for-bit, including NaN payloads and nulls"
+  }
+ },
+ "note": "ALP (encoding 10) is not decoded by pyarrow 26, DuckDB 1.5.6 or Polars 2.0.0; they fail on the whole file. The expected values for the six ALP columns are the in-file PLAIN reference columns (float_plain / double_plain), which the upstream fixture provides exactly for bit-comparison."
+}

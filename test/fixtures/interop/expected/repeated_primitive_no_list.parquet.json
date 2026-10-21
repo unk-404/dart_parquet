@@ -1,14 +1,7 @@
 {
  "file": "official/repeated_primitive_no_list.parquet",
- "kind": "unsupported",
+ "kind": "values",
  "writer_family": "arrow-rs",
- "pyarrow": {
-  "ok": true,
-  "read_ok": true,
-  "version": "26.0.0",
-  "error": null,
-  "read_error": null
- },
  "meta": {
   "rows": 4,
   "row_groups": 1,
@@ -56,5 +49,67 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "columns": [
+  {
+   "name": "Int32_list",
+   "dart_class": "ListColumn",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "8c3d7d129cce9b69",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "[0,1,2,3]",
+    "[]",
+    "[4]",
+    "[5,6,7,8]"
+   ]
+  },
+  {
+   "name": "String_list",
+   "dart_class": "ListColumn",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "d7b24936c9f97e6f",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "[\"foo\",\"zero\",\"one\",\"two\"]",
+    "[\"three\"]",
+    "[\"four\"]",
+    "[\"five\",\"six\",\"seven\",\"eight\"]"
+   ]
+  },
+  {
+   "name": "group_of_lists",
+   "dart_class": "StructColumn",
+   "length": 4,
+   "null_count": 0,
+   "checksum": "153e974fa5caffcf",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "samples": [
+    "{\"Int32_list_in_group\":[0,1,2,3],\"String_list_in_group\":[\"foo\",\"zero\",\"one\",\"two\"]}",
+    "{\"Int32_list_in_group\":[],\"String_list_in_group\":[\"three\"]}",
+    "{\"Int32_list_in_group\":[4],\"String_list_in_group\":[\"four\"]}",
+    "{\"Int32_list_in_group\":[5,6,7,8],\"String_list_in_group\":[\"five\",\"six\",\"seven\",\"eight\"]}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
 }

@@ -1928,11 +1928,7 @@ void main() {
       expect(isByteArrayDeltaEncoding(Encoding.deltaByteArray), isTrue);
       expect(isByteArrayDeltaEncoding(Encoding.deltaBinaryPacked), isFalse);
       for (final encoding in Encoding.values) {
-        expect(
-          isSupportedEncoding(encoding),
-          encoding != Encoding.alp,
-          reason: '$encoding',
-        );
+        expect(isSupportedEncoding(encoding), isTrue, reason: '$encoding');
       }
     });
 

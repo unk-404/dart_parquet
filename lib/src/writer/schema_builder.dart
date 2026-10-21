@@ -25,9 +25,11 @@ final class ParquetSchemaBuilder {
   final String rootName;
 
   final List<SchemaElement> _fields = <SchemaElement>[];
+  int _rootChildren = 0;
+  int _leafCount = 0;
 
-  /// Number of columns added so far.
-  int get numColumns => _fields.length;
+  /// Number of leaf columns added so far.
+  int get numColumns => _leafCount;
 
   /// Adds a pre-built leaf [element].
   void add(SchemaElement element) {
@@ -35,10 +37,44 @@ final class ParquetSchemaBuilder {
       throw ArgumentError.value(
         element.name,
         'element',
-        'ParquetSchemaBuilder only supports leaf columns',
+        'ParquetSchemaBuilder only supports leaf columns here',
       );
     }
     _fields.add(element);
+    _leafCount++;
+    _rootChildren++;
+  }
+
+  /// Adds an unshredded VARIANT group with `metadata` and `value` BYTE_ARRAY
+  /// children.
+  void addVariant(String name, {bool nullable = true}) {
+    _fields
+      ..add(
+        SchemaElement(
+          name: name,
+          repetitionType: nullable
+              ? FieldRepetitionType.optional
+              : FieldRepetitionType.required,
+          numChildren: 2,
+          logicalType: const VariantLogicalType(),
+        ),
+      )
+      ..add(
+        const SchemaElement(
+          type: PhysicalType.byteArray,
+          name: 'metadata',
+          repetitionType: FieldRepetitionType.required,
+        ),
+      )
+      ..add(
+        const SchemaElement(
+          type: PhysicalType.byteArray,
+          name: 'value',
+          repetitionType: FieldRepetitionType.required,
+        ),
+      );
+    _leafCount += 2;
+    _rootChildren++;
   }
 
   /// Adds an INT32 column.
@@ -170,7 +206,7 @@ final class ParquetSchemaBuilder {
   /// Builds the schema.
   ParquetSchema build() {
     return ParquetSchema.fromSchemaElements(<SchemaElement>[
-      SchemaElement(name: rootName, numChildren: _fields.length),
+      SchemaElement(name: rootName, numChildren: _rootChildren),
       ..._fields,
     ]);
   }

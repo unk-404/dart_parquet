@@ -1,18 +1,11 @@
 /// Dremel-style shredding: turns assembled [ParquetTable] columns back into
 /// per-leaf definition/repetition level streams.
 ///
-/// This is the inverse of `lib/src/table/nested_assembler.dart` for the shapes
-/// the reader supports:
-///
-///  * flat leaves (required or optional);
-///  * structs of leaves, including one nested struct level;
-///  * LIST of a leaf or of a struct of leaves;
-///  * MAP with a leaf key and a leaf value;
-///  * legacy bare repeated leaves at the top level.
-///
-/// Other shapes (list of list, map of struct, list/map inside a struct, ...)
-/// are rejected with a [ParquetUnsupportedException] so the writer never emits
-/// a file the reader cannot reconstruct.
+/// This is the inverse of `lib/src/table/nested_assembler.dart` and supports
+/// arbitrary nesting: optional/required/repeated groups and leaves, LIST of
+/// LIST/MAP/STRUCT, MAP of LIST/MAP/STRUCT, bare repeated leaves/groups,
+/// legacy two-level LIST encodings (all `parquet-format` backward-compatibility
+/// rules) and MAP without a value field.
 library;
 
 import 'dart:typed_data';
@@ -61,8 +54,8 @@ final class LeafData {
   int get presentCount => values.length;
 }
 
-/// Validates that [schema] only contains shapes this writer (and the matching
-/// reader) supports.
+/// Validates that [schema] is a schema this writer can shred and the matching
+/// reader can reconstruct.
 void validateSchemaShape(ParquetSchema schema) {
   if (schema.root.children.isEmpty) {
     throw ParquetUnsupportedException(
@@ -81,12 +74,6 @@ void _validateNode(SchemaNode node) {
     );
   }
   if (node.isLeaf) {
-    if (node.isRepeated) {
-      throw ParquetUnsupportedException(
-        'bare repeated leaf ${node.dotPath} is not supported; use a LIST '
-        'annotation instead',
-      );
-    }
     if (node.physicalType == PhysicalType.fixedLenByteArray &&
         (node.typeLength == null || node.typeLength! <= 0)) {
       throw ParquetUnsupportedException(
@@ -95,123 +82,28 @@ void _validateNode(SchemaNode node) {
     }
     return;
   }
-
-  if (node.isRepeated) {
-    throw ParquetUnsupportedException(
-      'bare repeated group ${node.dotPath} is not supported',
-    );
+  if (!_hasLeaf(node)) {
+    throw ParquetFormatException('group ${node.dotPath} has no leaf columns');
   }
-
-  if (isListNode(node)) {
-    if (node.children.length != 1) {
-      throw ParquetUnsupportedException(
-        'LIST group ${node.dotPath} must have exactly one child',
-      );
-    }
-    final repeated = node.children.single;
-    if (!repeated.isRepeated || repeated.children.length != 1) {
-      throw ParquetUnsupportedException(
-        'LIST group ${node.dotPath} must wrap a repeated group with one child',
-      );
-    }
-    final element = repeated.children.single;
-    if (element.isRepeated) {
-      throw ParquetUnsupportedException(
-        'LIST element ${element.dotPath} must not be repeated',
-      );
-    }
-    if (element.isLeaf) return;
-    final elementKind = element.logicalType?.kind;
-    if (elementKind == LogicalTypeKind.list ||
-        elementKind == LogicalTypeKind.map ||
-        isListNode(element)) {
-      throw ParquetUnsupportedException(
-        'list of ${elementKind?.name ?? 'list'} is not supported '
-        '(${element.dotPath})',
-      );
-    }
-    for (final child in element.children) {
-      if (!child.isLeaf || child.isRepeated) {
-        throw ParquetUnsupportedException(
-          'list of nested structs deeper than one level is not supported '
-          '(${child.dotPath})',
-        );
-      }
-    }
-    return;
-  }
-
-  if (node.logicalType?.kind == LogicalTypeKind.map) {
-    if (node.children.length != 1) {
-      throw ParquetUnsupportedException(
-        'MAP group ${node.dotPath} must have exactly one child',
-      );
-    }
-    final repeated = node.children.single;
-    if (!repeated.isRepeated || repeated.children.length < 2) {
-      throw ParquetUnsupportedException(
-        'MAP group ${node.dotPath} must wrap a repeated key/value group',
-      );
-    }
-    final keyNode = repeated.children[0];
-    final valueNode = repeated.children[1];
-    if (!keyNode.isLeaf || !valueNode.isLeaf) {
-      throw ParquetUnsupportedException(
-        'MAP with non-leaf key/value is not supported (${node.dotPath})',
-      );
-    }
-    if (keyNode.isRepeated || valueNode.isRepeated) {
-      throw ParquetUnsupportedException(
-        'MAP key/value must not be repeated (${node.dotPath})',
-      );
-    }
-    return;
-  }
-
-  // Struct.
+  // Throws a typed format error for malformed LIST/MAP shapes.
+  _resolveList(node);
+  _resolveMap(node);
   for (final child in node.children) {
-    if (child.isLeaf) {
-      if (child.isRepeated) {
-        throw ParquetUnsupportedException(
-          'repeated leaf ${child.dotPath} inside a struct is not supported',
-        );
-      }
-      continue;
-    }
-    if (child.isRepeated) {
-      throw ParquetUnsupportedException(
-        'repeated group ${child.dotPath} inside a struct is not supported',
-      );
-    }
-    final childKind = child.logicalType?.kind;
-    if (childKind == LogicalTypeKind.list ||
-        childKind == LogicalTypeKind.map ||
-        isListNode(child)) {
-      throw ParquetUnsupportedException(
-        'nested ${childKind?.name ?? 'list'} inside a struct is not supported '
-        '(${child.dotPath})',
-      );
-    }
-    for (final grand in child.children) {
-      if (!grand.isLeaf || grand.isRepeated) {
-        throw ParquetUnsupportedException(
-          'struct nesting deeper than one level is not supported '
-          '(${grand.dotPath})',
-        );
-      }
-    }
+    _validateNode(child);
   }
 }
 
-/// Whether [node] is a LIST group (modern annotation or the legacy shape the
-/// reader recognises).
-bool isListNode(SchemaNode node) {
-  if (node.isLeaf) return false;
-  if (node.logicalType?.kind == LogicalTypeKind.list) return true;
-  return node.children.length == 1 &&
-      node.children.first.isRepeated &&
-      node.children.first.name == 'list';
+bool _hasLeaf(SchemaNode node) {
+  if (node.isLeaf) return true;
+  for (final child in node.children) {
+    if (_hasLeaf(child)) return true;
+  }
+  return false;
 }
+
+/// Whether [node] is a LIST-annotated group.
+bool isListNode(SchemaNode node) =>
+    !node.isLeaf && node.logicalType?.kind == LogicalTypeKind.list;
 
 /// Validates that [table] matches [schema] structurally.
 void validateTableShape(ParquetTable table, ParquetSchema schema) {
@@ -242,36 +134,82 @@ void validateTableShape(ParquetTable table, ParquetSchema schema) {
         '${table.numRows}',
       );
     }
-    _validateColumn(node, column);
+    _validatePosition(node, column, consumed: false);
   }
 }
 
-void _validateColumn(SchemaNode node, ParquetColumn column) {
-  if (node.isLeaf) {
-    _requireLeafColumn(node, column);
+void _validatePosition(
+  SchemaNode node,
+  ParquetColumn column, {
+  required bool consumed,
+}) {
+  if (!node.isLeaf && node.logicalType?.kind == LogicalTypeKind.variant) {
+    if (column is! VariantColumn) {
+      throw ArgumentError(
+        'VARIANT column "${node.name}" is ${column.runtimeType}, expected '
+        'VariantColumn',
+      );
+    }
     return;
   }
-  if (isListNode(node)) {
+  if (node.isLeaf) {
+    if (node.isRepeated && !consumed) {
+      // A bare repeated leaf is represented by a [ListColumn] of its type.
+      if (column is! ListColumn) {
+        throw ArgumentError(
+          'repeated column "${node.name}" is ${column.runtimeType}, expected '
+          'ListColumn',
+        );
+      }
+      _requireLeafType(node, column.child);
+      return;
+    }
+    _requireLeafType(node, column);
+    return;
+  }
+
+  if (node.isRepeated && !consumed) {
+    // A bare repeated group is represented by a [ListColumn] of its struct.
+    if (column is! ListColumn) {
+      throw ArgumentError(
+        'repeated column "${node.name}" is ${column.runtimeType}, expected '
+        'ListColumn',
+      );
+    }
+    _validatePosition(node, column.child, consumed: true);
+    return;
+  }
+
+  final listShape = _resolveList(node);
+  if (listShape != null) {
     if (column is! ListColumn) {
       throw ArgumentError(
         'column "${node.name}" is ${column.runtimeType}, expected ListColumn',
       );
     }
-    final element = node.children.single.children.single;
-    _validateColumn(element, column.child);
+    _validatePosition(
+      listShape.element,
+      column.child,
+      consumed: listShape.consumed,
+    );
     return;
   }
-  if (node.logicalType?.kind == LogicalTypeKind.map) {
+
+  final mapShape = _resolveMap(node);
+  if (mapShape != null) {
     if (column is! MapColumn) {
       throw ArgumentError(
         'column "${node.name}" is ${column.runtimeType}, expected MapColumn',
       );
     }
-    final repeated = node.children.single;
-    _validateColumn(repeated.children[0], column.keys);
-    _validateColumn(repeated.children[1], column.values);
+    _validatePosition(mapShape.key, column.keys, consumed: false);
+    final valueNode = mapShape.value;
+    if (valueNode != null) {
+      _validatePosition(valueNode, column.values, consumed: false);
+    }
     return;
   }
+
   if (column is! StructColumn) {
     throw ArgumentError(
       'column "${node.name}" is ${column.runtimeType}, expected StructColumn',
@@ -284,7 +222,13 @@ void _validateColumn(SchemaNode node, ParquetColumn column) {
         'struct column "${node.name}" is missing field "${child.name}"',
       );
     }
-    _validateColumn(child, field);
+    if (field.length != column.length) {
+      throw ArgumentError(
+        'struct column "${node.name}" field "${child.name}" has length '
+        '${field.length}, expected ${column.length}',
+      );
+    }
+    _validatePosition(child, field, consumed: false);
   }
   for (final name in column.fields.keys) {
     if (!node.children.any((child) => child.name == name)) {
@@ -293,21 +237,6 @@ void _validateColumn(SchemaNode node, ParquetColumn column) {
       );
     }
   }
-}
-
-void _requireLeafColumn(SchemaNode node, ParquetColumn column) {
-  // A bare repeated leaf is represented by a [ListColumn] of its element type.
-  if (node.isRepeated) {
-    if (column is! ListColumn) {
-      throw ArgumentError(
-        'repeated column "${node.name}" is ${column.runtimeType}, expected '
-        'ListColumn',
-      );
-    }
-    _requireLeafType(node, column.child);
-    return;
-  }
-  _requireLeafType(node, column);
 }
 
 void _requireLeafType(SchemaNode node, ParquetColumn column) {
@@ -361,6 +290,10 @@ final class _Shredder {
   final bool fastFlat;
 
   void shredRoot(SchemaNode node, ParquetColumn column, int numRows) {
+    if (!node.isLeaf && node.logicalType?.kind == LogicalTypeKind.variant) {
+      _shredVariant(node, column as VariantColumn, numRows);
+      return;
+    }
     // Fast path for a flat leaf: no slot lists required.
     if (node.isLeaf && !node.isRepeated) {
       final data = _leaf(node)..setEntryCount(numRows);
@@ -424,6 +357,56 @@ final class _Shredder {
     _shred(node, column, slots, defs, reps);
   }
 
+  void _shredVariant(SchemaNode node, VariantColumn column, int numRows) {
+    SchemaNode? metadataNode;
+    SchemaNode? valueNode;
+    for (final child in node.children) {
+      if (child.name == 'metadata') metadataNode = child;
+      if (child.name == 'value') valueNode = child;
+    }
+    if (metadataNode == null ||
+        valueNode == null ||
+        !metadataNode.isLeaf ||
+        !valueNode.isLeaf) {
+      throw ParquetUnsupportedException(
+        'VARIANT ${node.dotPath} must be an unshredded metadata/value group',
+      );
+    }
+    final metadataData = _leaf(metadataNode)..setEntryCount(numRows);
+    final valueData = _leaf(valueNode)..setEntryCount(numRows);
+    final metadataDefs = Uint8List(numRows);
+    final valueDefs = Uint8List(numRows);
+    final metadataValues = <Object?>[];
+    final valueValues = <Object?>[];
+    final groupDef = node.maxDefLevel;
+    final nullDef = groupDef > 0 ? groupDef - 1 : 0;
+    for (var row = 0; row < numRows; row++) {
+      final variant = column.getVariant(row);
+      if (variant == null) {
+        if (!node.isOptional) {
+          throw ArgumentError(
+            'required VARIANT "${node.dotPath}" contains a null at row $row',
+          );
+        }
+        metadataDefs[row] = nullDef;
+        valueDefs[row] = nullDef;
+        continue;
+      }
+      metadataDefs[row] = groupDef;
+      valueDefs[row] = groupDef;
+      metadataValues.add(variant.metadataBytes);
+      valueValues.add(variant.valueBytes);
+    }
+    metadataData
+      ..defs = metadataDefs
+      ..reps = Uint8List(numRows)
+      ..values = metadataValues;
+    valueData
+      ..defs = valueDefs
+      ..reps = Uint8List(numRows)
+      ..values = valueValues;
+  }
+
   LeafData _leaf(SchemaNode node) {
     final data = _leaves[node.leafIndex!];
     if (data == null) {
@@ -437,12 +420,13 @@ final class _Shredder {
     ParquetColumn column,
     List<int> slots,
     List<int> defs,
-    List<int> reps,
-  ) {
+    List<int> reps, {
+    bool consumed = false,
+  }) {
     if (slots.isEmpty) return;
 
-    if (node.isRepeated) {
-      _shredBareRepeated(node, column, slots, defs, reps);
+    if (node.isRepeated && !consumed) {
+      _shredRepeated(node, column, slots, defs, reps);
       return;
     }
 
@@ -474,7 +458,8 @@ final class _Shredder {
       return;
     }
 
-    // Required node: nulls cannot be represented.
+    // Required node (including a repeated node consumed as a LIST element):
+    // nulls cannot be represented.
     for (var i = 0; i < slots.length; i++) {
       if (column.isNull(slots[i])) {
         throw ArgumentError(
@@ -502,13 +487,15 @@ final class _Shredder {
       return;
     }
 
-    if (isListNode(node)) {
-      _shredList(node, column, slots, defs, reps);
+    final listShape = _resolveList(node);
+    if (listShape != null) {
+      _shredList(node, listShape, column, slots, defs, reps);
       return;
     }
 
-    if (node.logicalType?.kind == LogicalTypeKind.map) {
-      _shredMap(node, column, slots, defs, reps);
+    final mapShape = _resolveMap(node);
+    if (mapShape != null) {
+      _shredMap(node, mapShape, column, slots, defs, reps);
       return;
     }
 
@@ -526,14 +513,14 @@ final class _Shredder {
 
   void _shredList(
     SchemaNode node,
+    _ListShape shape,
     ParquetColumn column,
     List<int> slots,
     List<int> defs,
     List<int> reps,
   ) {
     final list = column as ListColumn;
-    final repeated = node.children.single;
-    final element = repeated.children.single;
+    final repeated = shape.repeated;
     for (var i = 0; i < slots.length; i++) {
       final start = list.offsets[slots[i]];
       final end = list.offsets[slots[i] + 1];
@@ -541,25 +528,27 @@ final class _Shredder {
         _emitMissing(repeated, defs[i], reps[i]);
         continue;
       }
-      final def = defs[i] + 1; // the repeated group is defined
+      final def = defs[i] + 1; // the repeated group/leaf is defined
       for (var k = start; k < end; k++) {
         final rep = k == start ? reps[i] : repeated.repLevel;
-        _shred(element, list.child, <int>[k], <int>[def], <int>[rep]);
+        _shred(shape.element, list.child, <int>[k], <int>[def], <int>[
+          rep,
+        ], consumed: shape.consumed);
       }
     }
   }
 
   void _shredMap(
     SchemaNode node,
+    _MapShape shape,
     ParquetColumn column,
     List<int> slots,
     List<int> defs,
     List<int> reps,
   ) {
     final map = column as MapColumn;
-    final repeated = node.children.single;
-    final keyNode = repeated.children[0];
-    final valueNode = repeated.children[1];
+    final repeated = shape.repeated;
+    final valueNode = shape.value;
     for (var i = 0; i < slots.length; i++) {
       final start = map.offsets[slots[i]];
       final end = map.offsets[slots[i] + 1];
@@ -567,41 +556,39 @@ final class _Shredder {
         _emitMissing(repeated, defs[i], reps[i]);
         continue;
       }
-      final def = defs[i] + 1;
+      final def = defs[i] + 1; // the key/value group is defined
       for (var k = start; k < end; k++) {
         final rep = k == start ? reps[i] : repeated.repLevel;
-        _shred(keyNode, map.keys, <int>[k], <int>[def], <int>[rep]);
-        _shred(valueNode, map.values, <int>[k], <int>[def], <int>[rep]);
+        _shred(shape.key, map.keys, <int>[k], <int>[def], <int>[rep]);
+        if (valueNode != null) {
+          _shred(valueNode, map.values, <int>[k], <int>[def], <int>[rep]);
+        }
       }
     }
   }
 
-  void _shredBareRepeated(
+  void _shredRepeated(
     SchemaNode node,
     ParquetColumn column,
     List<int> slots,
     List<int> defs,
     List<int> reps,
   ) {
-    if (!node.isLeaf) {
-      throw ParquetUnsupportedException(
-        'bare repeated group ${node.dotPath} is not supported',
-      );
-    }
     final list = column as ListColumn;
-    final data = _leaf(node);
     for (var i = 0; i < slots.length; i++) {
       final start = list.offsets[slots[i]];
       final end = list.offsets[slots[i] + 1];
       if (start == end) {
-        data.defs.add(defs[i]);
-        data.reps.add(reps[i]);
+        // Empty repeated field: emit the parent's definition level.
+        _emitMissing(node, defs[i], reps[i]);
         continue;
       }
+      final def = defs[i] + 1; // the repeated element is defined
       for (var k = start; k < end; k++) {
-        data.defs.add(defs[i] + 1);
-        data.reps.add(k == start ? reps[i] : node.repLevel);
-        data.values.add(canonicalValue(list.child, k));
+        final rep = k == start ? reps[i] : node.repLevel;
+        _shred(node, list.child, <int>[k], <int>[def], <int>[
+          rep,
+        ], consumed: true);
       }
     }
   }
@@ -623,6 +610,120 @@ Iterable<SchemaNode> _leavesOf(SchemaNode node) sync* {
   for (final child in node.children) {
     yield* _leavesOf(child);
   }
+}
+
+/// Resolved LIST shape (see the assembler for the backward-compatibility rules).
+final class _ListShape {
+  const _ListShape({
+    required this.repeated,
+    required this.element,
+    required this.consumed,
+  });
+
+  final SchemaNode repeated;
+  final SchemaNode element;
+  final bool consumed;
+}
+
+/// Resolved MAP shape.
+final class _MapShape {
+  const _MapShape({required this.repeated, required this.key, this.value});
+
+  final SchemaNode repeated;
+  final SchemaNode key;
+  final SchemaNode? value;
+}
+
+_ListShape? _resolveList(SchemaNode node) {
+  if (node.isLeaf || node.logicalType?.kind != LogicalTypeKind.list) {
+    return null;
+  }
+  if (node.children.length != 1) {
+    throw ParquetFormatException(
+      'LIST group ${node.dotPath} must have exactly one child',
+    );
+  }
+  final repeated = node.children.single;
+  if (!repeated.isRepeated) {
+    throw ParquetFormatException(
+      'LIST group ${node.dotPath} must contain a repeated child',
+    );
+  }
+  if (repeated.isLeaf) {
+    return _ListShape(repeated: repeated, element: repeated, consumed: true);
+  }
+  if (repeated.children.isEmpty) {
+    throw ParquetFormatException(
+      'LIST group ${node.dotPath} has a repeated group without children',
+    );
+  }
+  if (repeated.children.length > 1 ||
+      repeated.name == 'array' ||
+      repeated.name == '${node.name}_tuple') {
+    return _ListShape(repeated: repeated, element: repeated, consumed: true);
+  }
+  return _ListShape(
+    repeated: repeated,
+    element: repeated.children.single,
+    consumed: false,
+  );
+}
+
+bool _isMapNode(SchemaNode node) {
+  if (node.isLeaf) return false;
+  final kind = node.logicalType?.kind;
+  if (kind == LogicalTypeKind.map) return true;
+  if (node.convertedType == ConvertedType.map) return true;
+  if (node.convertedType == ConvertedType.mapKeyValue &&
+      _looksLikeMapWrapper(node)) {
+    return true;
+  }
+  if (node.children.length == 1) {
+    final child = node.children.single;
+    if (child.isRepeated &&
+        child.convertedType == ConvertedType.mapKeyValue &&
+        child.children.isNotEmpty &&
+        child.children.length <= 2) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool _looksLikeMapWrapper(SchemaNode node) {
+  if (node.children.length != 1) return false;
+  final child = node.children.single;
+  return child.isRepeated &&
+      child.children.isNotEmpty &&
+      child.children.length <= 2;
+}
+
+_MapShape? _resolveMap(SchemaNode node) {
+  if (!_isMapNode(node)) return null;
+  if (node.children.length != 1) {
+    throw ParquetFormatException(
+      'MAP group ${node.dotPath} must have exactly one child',
+    );
+  }
+  final repeated = node.children.single;
+  if (!repeated.isRepeated) {
+    throw ParquetFormatException(
+      'MAP group ${node.dotPath} must contain a repeated key/value child',
+    );
+  }
+  if (repeated.children.isEmpty) {
+    throw ParquetFormatException('MAP group ${node.dotPath} has no key field');
+  }
+  if (repeated.children.length > 2) {
+    throw ParquetFormatException(
+      'MAP group ${node.dotPath} has more than key and value fields',
+    );
+  }
+  return _MapShape(
+    repeated: repeated,
+    key: repeated.children.first,
+    value: repeated.children.length == 2 ? repeated.children[1] : null,
+  );
 }
 
 /// Materialises the canonical writer representation of value [index].

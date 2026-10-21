@@ -4,6 +4,7 @@ library;
 
 import 'dart:typed_data';
 
+import '../encodings/alp.dart';
 import '../encodings/bitpacking.dart' show requiredBits;
 import '../format/enums.dart';
 import '../format/thrift.dart';
@@ -175,8 +176,13 @@ ColumnChunkWriteResult writeLeafChunk(
   final pageType = options.dataPageVersion == 2
       ? PageType.dataPageV2
       : PageType.dataPage;
+  final useAlp =
+      options.enableAlp &&
+      (type == PhysicalType.float || type == PhysicalType.double);
   final valueEncoding = dictionary != null
       ? Encoding.rleDictionary
+      : useAlp
+      ? Encoding.alp
       : Encoding.plain;
 
   final pageStatsList = <_ColumnStatistics>[];
@@ -206,7 +212,9 @@ ColumnChunkWriteResult writeLeafChunk(
     final rowsInPage = _countRows(leaf, range, maxRep);
 
     final Uint8List valueBytes;
-    if (dictionary != null) {
+    if (useAlp) {
+      valueBytes = encodeAlp(pageValues!.cast<num>(), type: type);
+    } else if (dictionary != null) {
       valueBytes = encodeDictionaryIndices(
         indices!.sublist(presentStart, presentEnd),
         dictionary.bitWidth,
@@ -337,6 +345,7 @@ ColumnChunkWriteResult writeLeafChunk(
     Encoding.plain,
     Encoding.rle,
     if (dictionary != null) Encoding.rleDictionary,
+    if (useAlp) Encoding.alp,
   }.toList()..sort((a, b) => a.value.compareTo(b.value));
 
   final columnIndex = options.writePageIndex

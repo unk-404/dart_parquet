@@ -1,0 +1,172 @@
+{
+ "file": "v0.2/variant/case-044.parquet",
+ "asset": "variant",
+ "case_number": 44,
+ "test": "testShreddedObjectWithinShreddedObject",
+ "shredding": "nested shredded object (object fields containing objects)",
+ "variant_text": "Variant(metadata=VariantMetadata(dict={0 => a, 1 => b, 2 => c, 3 => d, 4 => e}), value=VariantObject(fields={c: VariantObject(fields={a: Variant(type=INT32, value=34), b: Variant(type=STRING, value=iceberg)}), d: Variant(type=DOUBLE, value=-0.0)}))",
+ "variant_bin": "v0.2/variant/case-044_row-0.variant.bin",
+ "variant_bin_bytes": 49,
+ "variant_bin_sha256": "1188347b89122a56c89af038455906cae88f62b2dcd91ed45d44ccda800f5d77",
+ "variant_bin_hex": "110500010203040561626364650202020300141d0202000100050d14220000001d696365626572671c0000000000000080",
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.16.0-SNAPSHOT (build ee34713e4d906d61f95d2b09145945638b2e2296)"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.metadata",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 1,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 2,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.c.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.c.typed_value.a.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 4,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.c.typed_value.a.typed_value",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 4,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.c.typed_value.b.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 4,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.c.typed_value.b.typed_value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": "string",
+   "max_def": 4,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.d.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.typed_value.d.typed_value",
+   "physical": "double",
+   "type_length": null,
+   "logical": null,
+   "max_def": 3,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "physical_columns": [
+  {
+   "name": "id",
+   "dart_class": "Int32Column",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "07f8bc07b4ba5002",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "1"
+   ]
+  },
+  {
+   "name": "var",
+   "dart_class": "StructColumn",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "402265b3faab960c",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "{\"metadata\":{\"hex\":\"11050001020304056162636465\"},\"typed_value\":{\"c\":{\"typed_value\":{\"a\":{\"typed_value\":34,\"value\":null},\"b\":{\"typed_value\":\"iceberg\",\"value\":null}},\"value\":null},\"d\":{\"typed_value\":{\"f64\":\"8000000000000000\"},\"value\":null}},\"value\":null}"
+   ]
+  }
+ ],
+ "engine_support": {
+  "pyarrow": {
+   "read": "physical struct",
+   "semantic_variant": false,
+   "rows": 1,
+   "columns": [
+    "id",
+    "var"
+   ]
+  },
+  "duckdb": {
+   "read": false,
+   "error": "NotImplementedException: Not implemented Error: Unsupported Arrow type VARIANT"
+  },
+  "polars": {
+   "read": false,
+   "error": "ComputeError: parquet: File out of specification: LogicalType union has no variant set"
+  },
+  "dart": {
+   "read": "physical StructColumn",
+   "semantic_variant": false,
+   "note": "lib/src/variant VariantCodec exists and is exported; the reader does not yet wire VARIANT groups to VariantColumn (nested-dev/v0.2 work), so the column currently decodes as a physical struct"
+  }
+ },
+ "note": "Expected physical values come from pyarrow 26 (no semantic Variant decoding). The authoritative Variant semantics are the upstream cases.json 'variant' text plus the .variant.bin payload."
+}

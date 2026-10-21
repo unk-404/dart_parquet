@@ -18,8 +18,8 @@ void main() {
       if (fixture.kind == 'gap') fixture,
   ];
 
-  test('manifest lists 50 value fixtures from multiple writer origins', () {
-    expect(values.length, 50);
+  test('manifest lists 56 value fixtures from multiple writer origins', () {
+    expect(values.length, 56);
     final families = <String>{
       for (final fixture in fixtures)
         (fixture.doc['writer_family'] as String?) ?? 'unknown',

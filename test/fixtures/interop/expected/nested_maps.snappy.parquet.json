@@ -1,14 +1,7 @@
 {
  "file": "official/nested_maps.snappy.parquet",
- "kind": "unsupported",
+ "kind": "values",
  "writer_family": "parquet-mr",
- "pyarrow": {
-  "ok": true,
-  "read_ok": true,
-  "version": "26.0.0",
-  "error": null,
-  "read_error": null
- },
  "meta": {
   "rows": 6,
   "row_groups": 1,
@@ -66,5 +59,79 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "columns": [
+  {
+   "name": "a",
+   "dart_class": "MapColumn",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "df35ffa1ae103bf4",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "[[\"a\",[[1,true],[2,false]]]]",
+    "[[\"b\",[[1,true]]]]",
+    "[[\"c\",null]]",
+    "[[\"d\",[]]]",
+    "[[\"e\",[[1,true]]]]",
+    "[[\"f\",[[3,true],[4,false],[5,true]]]]"
+   ]
+  },
+  {
+   "name": "b",
+   "dart_class": "Int32Column",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "780472575515acd1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1"
+   ]
+  },
+  {
+   "name": "c",
+   "dart_class": "Float64Column",
+   "length": 6,
+   "null_count": 0,
+   "checksum": "a3ca1f6db128d01b",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "samples": [
+    "{\"f64\":\"3ff0000000000000\"}",
+    "{\"f64\":\"3ff0000000000000\"}",
+    "{\"f64\":\"3ff0000000000000\"}",
+    "{\"f64\":\"3ff0000000000000\"}",
+    "{\"f64\":\"3ff0000000000000\"}",
+    "{\"f64\":\"3ff0000000000000\"}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
 }

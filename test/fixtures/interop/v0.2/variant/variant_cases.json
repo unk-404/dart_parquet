@@ -1,0 +1,66 @@
+[
+ {
+  "case_number": 5,
+  "test": "testShreddedVariantPrimitives",
+  "parquet_file": "case-005.parquet",
+  "variant_file": "case-005_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=BOOLEAN_FALSE, value=false))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 6,
+  "test": "testShreddedVariantPrimitives",
+  "parquet_file": "case-006.parquet",
+  "variant_file": "case-006_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=INT8, value=34))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 44,
+  "test": "testShreddedObjectWithinShreddedObject",
+  "parquet_file": "case-044.parquet",
+  "variant_file": "case-044_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={0 => a, 1 => b, 2 => c, 3 => d, 4 => e}), value=VariantObject(fields={c: VariantObject(fields={a: Variant(type=INT32, value=34), b: Variant(type=STRING, value=iceberg)}), d: Variant(type=DOUBLE, value=-0.0)}))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 47,
+  "test": "testUnshreddedVariants",
+  "parquet_file": "case-047.parquet",
+  "variant_file": "case-047_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=NULL, value=null))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 48,
+  "test": "testUnshreddedVariants",
+  "parquet_file": "case-048.parquet",
+  "variant_file": "case-048_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=BOOLEAN_TRUE, value=true))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 49,
+  "test": "testUnshreddedVariants",
+  "parquet_file": "case-049.parquet",
+  "variant_file": "case-049_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=BOOLEAN_FALSE, value=false))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 50,
+  "test": "testUnshreddedVariants",
+  "parquet_file": "case-050.parquet",
+  "variant_file": "case-050_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=INT8, value=34))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ },
+ {
+  "case_number": 130,
+  "test": "testEmptyShreddedObject",
+  "parquet_file": "case-130.parquet",
+  "variant_file": "case-130_row-0.variant.bin",
+  "variant": "Variant(metadata=VariantMetadata(dict={0 => a, 1 => b, 2 => c, 3 => d, 4 => e}), value=VariantObject(fields={}))",
+  "upstream_cases_json": "https://github.com/apache/parquet-testing/blob/master/shredded_variant/cases.json"
+ }
+]

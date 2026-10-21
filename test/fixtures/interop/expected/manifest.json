@@ -502,14 +502,14 @@
   {
    "file": "official/map_no_value.parquet",
    "expected": "expected/map_no_value.parquet.json",
-   "kind": "unsupported",
+   "kind": "gap",
    "bytes": 825,
    "sha256": "5c4fc6c13fe7308acb2fd317a3bd59e5b9c9c206c005e863ae0a1abdbbf5e2ea",
    "rows": 3,
    "row_groups": 1,
    "created_by": "parquet-rs version 53.2.0",
    "writer_family": "arrow-rs",
-   "exception": "ParquetFormatException"
+   "gap": "pyarrow canonicalizes a MAP without values as a key list"
   },
   {
    "file": "official/nan_in_stats.parquet",
@@ -537,26 +537,24 @@
   {
    "file": "official/nested_lists.snappy.parquet",
    "expected": "expected/nested_lists.snappy.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 881,
    "sha256": "2cb2cc0564486a28550429a8b6d0907bbb41e138546797bc91a4ebd850edd5a5",
    "rows": 3,
    "row_groups": 1,
    "created_by": "parquet-mr version 1.8.2 (build c6522788629e590a53eb79874b95f6c3ff11f16c)",
-   "writer_family": "parquet-mr",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "parquet-mr"
   },
   {
    "file": "official/nested_maps.snappy.parquet",
    "expected": "expected/nested_maps.snappy.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 1324,
    "sha256": "db1a493003a7dcd2011bf89e460fed007903fcdeb58f53df29387b4e908e2a6d",
    "rows": 6,
    "row_groups": 1,
    "created_by": "parquet-mr version 1.8.2 (build c6522788629e590a53eb79874b95f6c3ff11f16c)",
-   "writer_family": "parquet-mr",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "parquet-mr"
   },
   {
    "file": "official/nested_structs.rust.parquet",
@@ -583,14 +581,13 @@
   {
    "file": "official/nonnullable.impala.parquet",
    "expected": "expected/nonnullable.impala.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 3186,
    "sha256": "e7927cde24c083e42a3d4b37ac962d34381f71c2d252169b627dd8459a5880e3",
    "rows": 1,
    "row_groups": 1,
    "created_by": "parquet-mr version 1.8.0 (build 0fda28af84b9746396014ad6a415b90592a98b3b)",
-   "writer_family": "parquet-mr",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "parquet-mr"
   },
   {
    "file": "official/null_list.parquet",
@@ -606,14 +603,13 @@
   {
    "file": "official/nullable.impala.parquet",
    "expected": "expected/nullable.impala.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 3896,
    "sha256": "de9102a599d852be3af1d2af5d3498d8e019c329096a6f2d260f55ae2d6ed0ae",
    "rows": 7,
    "row_groups": 1,
    "created_by": "parquet-mr version 1.8.0 (build 0fda28af84b9746396014ad6a415b90592a98b3b)",
-   "writer_family": "parquet-mr",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "parquet-mr"
   },
   {
    "file": "official/nulls.snappy.parquet",
@@ -629,14 +625,13 @@
   {
    "file": "official/old_list_structure.parquet",
    "expected": "expected/old_list_structure.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 539,
    "sha256": "065b336c65885ab9dfd97cf85ce39a45488ed12d0183917db0a11621b0711e3b",
    "rows": 1,
    "row_groups": 1,
    "created_by": "parquet-mr version 1.14.3 (build b5e376a2caee767a11e75b783512b14cf8ca90ec)",
-   "writer_family": "parquet-mr",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "parquet-mr"
   },
   {
    "file": "official/page_v2_empty_compressed.parquet",
@@ -652,26 +647,25 @@
   {
    "file": "official/repeated_no_annotation.parquet",
    "expected": "expected/repeated_no_annotation.parquet.json",
-   "kind": "unsupported",
+   "kind": "gap",
    "bytes": 662,
    "sha256": "97d35acb9721e40fc0f66fba916a442c4a1cf77a35992dc891ad0cdcc5a24cfb",
    "rows": 0,
    "row_groups": 1,
    "created_by": "parquet-rs version 0.3.0 (build b45ce7cba2199f22d93269c150d8a83916c69b5e)",
    "writer_family": "arrow-rs",
-   "exception": "ParquetUnsupportedException"
+   "gap": "legacy FileMetaData.num_rows=0 while the row group has 6 rows"
   },
   {
    "file": "official/repeated_primitive_no_list.parquet",
    "expected": "expected/repeated_primitive_no_list.parquet.json",
-   "kind": "unsupported",
+   "kind": "values",
    "bytes": 1296,
    "sha256": "fcd6152058b8b8259a516105da5919b23cb8ccfc42258de0fe20e3107f8ef809",
    "rows": 4,
    "row_groups": 1,
    "created_by": "parquet-rs version 53.2.0",
-   "writer_family": "arrow-rs",
-   "exception": "ParquetUnsupportedException"
+   "writer_family": "arrow-rs"
   },
   {
    "file": "official/rle-dict-snappy-checksum.parquet",

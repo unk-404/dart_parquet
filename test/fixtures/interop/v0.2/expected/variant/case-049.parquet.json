@@ -1,0 +1,102 @@
+{
+ "file": "v0.2/variant/case-049.parquet",
+ "asset": "variant",
+ "case_number": 49,
+ "test": "testUnshreddedVariants",
+ "shredding": "unshredded",
+ "variant_text": "Variant(metadata=VariantMetadata(dict={}), value=Variant(type=BOOLEAN_FALSE, value=false))",
+ "variant_bin": "v0.2/variant/case-049_row-0.variant.bin",
+ "variant_bin_bytes": 4,
+ "variant_bin_sha256": "ec2981e8d0a1e7b4ab42fea2f0edd308d68fc25147bb3ccc62b62038b8e8e3d5",
+ "variant_bin_hex": "01000008",
+ "meta": {
+  "rows": 1,
+  "row_groups": 1,
+  "created_by": "parquet-mr version 1.16.0-SNAPSHOT (build ee34713e4d906d61f95d2b09145945638b2e2296)"
+ },
+ "leaves": [
+  {
+   "path": "id",
+   "physical": "int32",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.metadata",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  },
+  {
+   "path": "var.value",
+   "physical": "byteArray",
+   "type_length": null,
+   "logical": null,
+   "max_def": 0,
+   "max_rep": 0,
+   "scale": null,
+   "precision": null
+  }
+ ],
+ "physical_columns": [
+  {
+   "name": "id",
+   "dart_class": "Int32Column",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "07f8bc07b4ba5002",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "1"
+   ]
+  },
+  {
+   "name": "var",
+   "dart_class": "StructColumn",
+   "length": 1,
+   "null_count": 0,
+   "checksum": "c4f386b6a7f92fd0",
+   "sample_rows": [
+    0
+   ],
+   "samples": [
+    "{\"metadata\":{\"hex\":\"010000\"},\"value\":{\"hex\":\"08\"}}"
+   ]
+  }
+ ],
+ "engine_support": {
+  "pyarrow": {
+   "read": "physical struct",
+   "semantic_variant": false,
+   "rows": 1,
+   "columns": [
+    "id",
+    "var"
+   ]
+  },
+  "duckdb": {
+   "read": false,
+   "error": "NotImplementedException: Not implemented Error: Unsupported Arrow type VARIANT"
+  },
+  "polars": {
+   "read": false,
+   "error": "ComputeError: parquet: File out of specification: LogicalType union has no variant set"
+  },
+  "dart": {
+   "read": "physical StructColumn",
+   "semantic_variant": false,
+   "note": "lib/src/variant VariantCodec exists and is exported; the reader does not yet wire VARIANT groups to VariantColumn (nested-dev/v0.2 work), so the column currently decodes as a physical struct"
+  }
+ },
+ "note": "Expected physical values come from pyarrow 26 (no semantic Variant decoding). The authoritative Variant semantics are the upstream cases.json 'variant' text plus the .variant.bin payload."
+}

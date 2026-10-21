@@ -1,14 +1,7 @@
 {
  "file": "official/nullable.impala.parquet",
- "kind": "unsupported",
+ "kind": "values",
  "writer_family": "parquet-mr",
- "pyarrow": {
-  "ok": true,
-  "read_ok": true,
-  "version": "26.0.0",
-  "error": null,
-  "read_error": null
- },
  "meta": {
   "rows": 7,
   "row_groups": 1,
@@ -146,5 +139,148 @@
    "precision": null
   }
  ],
- "exception": "ParquetUnsupportedException"
+ "columns": [
+  {
+   "name": "id",
+   "dart_class": "Int64Column",
+   "length": 7,
+   "null_count": 0,
+   "checksum": "9713e46347483457",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7"
+   ]
+  },
+  {
+   "name": "int_array",
+   "dart_class": "ListColumn",
+   "length": 7,
+   "null_count": 4,
+   "checksum": "bf8920598781ca26",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "[1,2,3]",
+    "[null,1,2,null,3,null]",
+    "[]",
+    "null",
+    "null",
+    "null"
+   ]
+  },
+  {
+   "name": "int_array_Array",
+   "dart_class": "ListColumn",
+   "length": 7,
+   "null_count": 2,
+   "checksum": "9c1ec3f1e604ad02",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "[[1,2],[3,4]]",
+    "[[null,1,2,null],[3,null,4],[],null]",
+    "[null]",
+    "null",
+    "null",
+    "[null,[5,6]]"
+   ]
+  },
+  {
+   "name": "int_map",
+   "dart_class": "MapColumn",
+   "length": 7,
+   "null_count": 1,
+   "checksum": "82953a6d42cd28a1",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "[[\"k1\",1],[\"k2\",100]]",
+    "[[\"k1\",2],[\"k2\",null]]",
+    "[]",
+    "[]",
+    "null",
+    "[[\"k1\",null],[\"k3\",null]]"
+   ]
+  },
+  {
+   "name": "int_Map_Array",
+   "dart_class": "ListColumn",
+   "length": 7,
+   "null_count": 3,
+   "checksum": "c4b39e0ad5383f72",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "[[[\"k1\",1]]]",
+    "[[[\"k1\",1],[\"k3\",null]],null,[]]",
+    "[null,null]",
+    "null",
+    "null",
+    "null"
+   ]
+  },
+  {
+   "name": "nested_struct",
+   "dart_class": "StructColumn",
+   "length": 7,
+   "null_count": 1,
+   "checksum": "db9c97c352cd5064",
+   "sample_rows": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   "samples": [
+    "{\"A\":1,\"C\":{\"d\":[[{\"E\":10,\"F\":\"aaa\"},{\"E\":-10,\"F\":\"bbb\"}],[{\"E\":11,\"F\":\"c\"}]]},\"b\":[1],\"g\":[[\"foo\",{\"H\":{\"i\":[{\"f64\":\"3ff199999999999a\"}]}}]]}",
+    "{\"A\":null,\"C\":{\"d\":[[{\"E\":null,\"F\":null},{\"E\":10,\"F\":\"aaa\"},{\"E\":null,\"F\":null},{\"E\":-10,\"F\":\"bbb\"},{\"E\":null,\"F\":null}],[{\"E\":11,\"F\":\"c\"},null],[],null]},\"b\":[null],\"g\":[[\"g1\",{\"H\":{\"i\":[{\"f64\":\"400199999999999a\"},null]}}],[\"g2\",{\"H\":{\"i\":[]}}],[\"g3\",null],[\"g4\",{\"H\":{\"i\":null}}],[\"g5\",{\"H\":null}]]}",
+    "{\"A\":null,\"C\":{\"d\":[]},\"b\":null,\"g\":[]}",
+    "{\"A\":null,\"C\":null,\"b\":null,\"g\":[[\"foo\",{\"H\":{\"i\":[{\"f64\":\"400199999999999a\"},{\"f64\":\"400a666666666666\"}]}}]]}",
+    "null",
+    "{\"A\":7,\"C\":{\"d\":[[],[null],null]},\"b\":[2,3,null],\"g\":null}"
+   ]
+  }
+ ],
+ "pyarrow": {
+  "ok": true,
+  "version": "26.0.0"
+ }
 }
