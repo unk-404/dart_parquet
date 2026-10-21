@@ -129,6 +129,43 @@ final schema = (ParquetSchemaBuilder()
 Nested schemas can be written from an existing `ParquetSchema`, including one
 read from a file.
 
+### Streaming to a file
+
+`ParquetStreamWriter` writes each row group directly to a blit `BytesFile`
+(OPFS on Web), so the complete file is never buffered in memory:
+
+```dart
+final file = await openBytesFile('data.parquet', readOnly: false);
+final writer = ParquetStreamWriter(table.schema, file);
+await writer.add(table);
+await writer.add(anotherTable);
+await writer.finish(close: true);
+```
+
+### Metadata sidecars and resume
+
+`writeFileMetaData` / `readFileMetaData` serialise the footer's
+`FileMetaData` without the `PAR1` trailer, so metadata can be stored in a
+separate file or two mirrored `.meta` slots:
+
+```dart
+final metadata = reader.metadata.fileMetadata;
+final sidecar = writeFileMetaData(metadata);
+// ...
+final restored = readFileMetaData(sidecar);
+```
+
+`ParquetWriter.resume` continues an existing file from its bytes and metadata:
+
+```dart
+final writer = ParquetWriter.resume(existingBytes, restored);
+writer.add(newTable);
+final bytes = writer.finish();
+```
+
+Existing row groups, page indexes, Bloom filters and offsets are preserved;
+new row groups use the options passed to `resume`.
+
 ## Web
 
 ```dart

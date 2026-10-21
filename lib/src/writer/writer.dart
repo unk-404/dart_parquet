@@ -13,10 +13,13 @@ library;
 
 import 'dart:typed_data';
 
+import '../format/parquet_format.dart';
 import '../format/thrift.dart';
+import '../metadata/file_metadata_codec.dart';
 import '../schema/schema.dart';
 import '../table/table.dart';
 import '../util/bytes.dart';
+import '../util/errors.dart';
 import 'column_writer.dart';
 import 'page_index_writer.dart';
 import 'schema_encoder.dart';
@@ -25,6 +28,7 @@ import 'writer_options.dart';
 
 export 'file_output.dart';
 export 'schema_builder.dart';
+export 'stream_writer.dart';
 export 'writer_options.dart';
 
 /// Streaming Parquet writer: every [add] call becomes one row group.
@@ -44,11 +48,82 @@ final class ParquetWriter {
     _out.writeUint8List(_magic);
   }
 
+  /// Resumes a file from its existing bytes and row-group metadata.
+  ///
+  /// [existingData] is a complete Parquet file (its footer/trailer are
+  /// stripped) or the prefix containing `PAR1` and the row groups. The supplied
+  /// [fileMetaData] must describe that same prefix; new [add] calls append new
+  /// row groups after it. Existing page indexes, Bloom filters and offsets are
+  /// preserved.
+  factory ParquetWriter.resume(
+    List<int> existingData,
+    FileMetaData fileMetaData, {
+    ParquetWriterOptions options = const ParquetWriterOptions(),
+  }) {
+    options.validate();
+    final schema = ParquetSchema.fromFileMetaData(fileMetaData);
+    validateSchemaShape(schema);
+    final raw = fileMetaDataToThrift(fileMetaData);
+    final data = Uint8List.fromList(existingData);
+    var end = data.length;
+    if (data.length >= 8 &&
+        data[data.length - 4] == 0x50 &&
+        data[data.length - 3] == 0x41 &&
+        data[data.length - 2] == 0x52 &&
+        data[data.length - 1] == 0x31) {
+      final lengthOffset = data.length - 8;
+      final footerLength =
+          data[lengthOffset] |
+          (data[lengthOffset + 1] << 8) |
+          (data[lengthOffset + 2] << 16) |
+          (data[lengthOffset + 3] << 24);
+      end = lengthOffset - footerLength;
+    }
+    if (end < 4 ||
+        data[0] != 0x50 ||
+        data[1] != 0x41 ||
+        data[2] != 0x52 ||
+        data[3] != 0x31) {
+      throw ParquetFormatException('resume data is not a Parquet file prefix');
+    }
+
+    final writer = ParquetWriter._resume(schema, options, raw);
+    writer._out.writeUint8List(data.sublist(0, end));
+    writer._schemaElements = (raw[2]! as TList).values
+        .cast<Map<int, Object?>>()
+        .toList(growable: false);
+    writer._rowGroups.addAll(
+      (raw[4]! as TList).values.cast<Map<int, Object?>>(),
+    );
+    var rows = 0;
+    var ordinal = 0;
+    for (final group in writer._rowGroups) {
+      final groupRows = _rawInt(group[3]);
+      rows += groupRows;
+      final groupOrdinal = _rawInt(group[7]);
+      if (groupOrdinal >= ordinal) ordinal = groupOrdinal + 1;
+    }
+    if (fileMetaData.numRows != 0 && fileMetaData.numRows != rows) {
+      throw ParquetFormatException(
+        'resume metadata num_rows is ${fileMetaData.numRows}, '
+        'row groups contain $rows',
+      );
+    }
+    writer._numRows = rows;
+    writer._rowGroupOrdinal = ordinal;
+    return writer;
+  }
+
+  ParquetWriter._resume(this.schema, this.options, Map<int, Object?> resumedRaw)
+    : _resumedRaw = resumedRaw;
+
   /// Target schema.
   final ParquetSchema schema;
 
   /// Writer options.
   final ParquetWriterOptions options;
+
+  Map<int, Object?>? _resumedRaw;
 
   static const List<int> _magic = <int>[0x50, 0x41, 0x52, 0x31]; // PAR1
 
@@ -119,8 +194,9 @@ final class ParquetWriter {
     if (options.writePageIndex) _writePageIndexes();
     if (options.writeBloomFilter) _writeBloomFilters();
 
+    final resumed = _resumedRaw;
     final footer = <int, Object?>{
-      1: ThriftI32(1), // FileMetaData.version
+      1: resumed?[1] ?? ThriftI32(1), // FileMetaData.version
       2: TList(TCompactType.struct, _schemaElements),
       3: ThriftI64(_numRows),
       4: TList(TCompactType.struct, _rowGroups),
@@ -128,14 +204,19 @@ final class ParquetWriter {
         5: TList(TCompactType.struct, [
           for (final entry in options.keyValueMetadata!.entries)
             <int, Object?>{1: entry.key, 2: entry.value},
-        ]),
+        ])
+      else if (resumed?[5] != null)
+        5: resumed![5]!,
       6: options.createdBy,
       // Type-defined column order for every leaf; required for readers to
-      // interpret min_value / max_value.
-      7: TList(TCompactType.struct, [
-        for (var i = 0; i < schema.numColumns; i++)
-          <int, Object?>{1: <int, Object?>{}},
-      ]),
+      // interpret min_value / max_value. Preserve the source file's order
+      // when resuming.
+      7:
+          resumed?[7] ??
+          TList(TCompactType.struct, [
+            for (var i = 0; i < schema.numColumns; i++)
+              <int, Object?>{1: <int, Object?>{}},
+          ]),
     };
 
     final thrift = ThriftCompactWriter();
@@ -186,6 +267,16 @@ final class ParquetWriter {
       }
     }
   }
+}
+
+int _rawInt(Object? value) {
+  if (value is int) return value;
+  if (value is ThriftI64) return value.value;
+  if (value is ThriftI32) return value.value;
+  if (value is ThriftI16) return value.value;
+  throw ParquetFormatException(
+    'expected an integer in resumed metadata, got ${value.runtimeType}',
+  );
 }
 
 /// Writes [table] as a single-row-group Parquet file with [options].

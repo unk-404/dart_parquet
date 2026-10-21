@@ -281,6 +281,51 @@ void main() {
     });
   });
 
+  group('streaming writer output', () {
+    test('streams row groups directly to OPFS', () async {
+      final path = _uniquePath('parquet-web-stream');
+      _opfsPaths.add(path);
+      final table = ParquetReader.fromBytes(webFixture('flat_snappy.parquet'))
+          .readTableSync();
+      final handle = await BlitSource.open(path, create: true, readOnly: false);
+      final writer = ParquetStreamWriter(
+        table.schema,
+        handle.file,
+        options: const ParquetWriterOptions(
+          compression: CompressionType.snappy,
+          writePageIndex: true,
+          writeCrc: true,
+        ),
+      );
+      try {
+        await writer.add(table);
+        await writer.add(table);
+        await writer.finish(close: true);
+      } finally {
+        if (!handle.file.isClosed) await handle.close();
+      }
+
+      final source = await openSource('opfs://$path');
+      try {
+        final reader = await ParquetReader.open(source);
+        expect(reader.numRows, 16);
+        expect(reader.metadata.rowGroups.length, 2);
+        expectFlatTable(await reader.readRowGroup(0));
+        final length = await source.length;
+        final bytes = await source.read(0, length);
+        expect(
+          reader.metadata
+              .rowGroup(0)
+              .column(0)
+              .readOffsetIndex(MemorySource.fromUint8List(bytes.asUint8List())),
+          isNotNull,
+        );
+      } finally {
+        await source.close();
+      }
+    });
+  });
+
   group('capability helpers', () {
     test('openSource explains missing OPFS files', () async {
       final path = _uniquePath('parquet-web-missing');

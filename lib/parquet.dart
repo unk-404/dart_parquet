@@ -23,6 +23,7 @@ export 'src/format/enums.dart'
 export 'src/format/logical_type.dart';
 export 'src/io/io.dart';
 export 'src/io/source.dart';
+export 'src/metadata/file_metadata_codec.dart';
 export 'src/metadata/metadata.dart';
 export 'src/predicate/predicate.dart';
 export 'src/reader.dart';

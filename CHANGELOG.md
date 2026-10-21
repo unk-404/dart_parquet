@@ -2,6 +2,13 @@
 
 ## 0.1.3
 
+- Added `ParquetStreamWriter(schema, BytesFile)`: `add()` writes row groups
+  directly to the file, holding at most one column chunk in memory.
+- Added public `writeFileMetaData` / `readFileMetaData` for bare Thrift
+  `FileMetaData` sidecars (for example dual `.meta` slots).
+- Added `ParquetWriter.resume(existingData, fileMetaData)`, which strips the
+  old footer and appends new row groups while preserving existing offsets,
+  page indexes and Bloom filters.
 - Performance release; no public API removed or changed.
 - Reader: reuse fully-valid compact column buffers instead of copying every
   value, fast single-page concatenation, cheaper PLAIN BYTE_ARRAY decoding, and
