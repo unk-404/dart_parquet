@@ -98,6 +98,19 @@ final table = await ParquetReader.fromBytes(
 
 Synchronous methods always execute on the calling isolate.
 
+### Batches
+
+```dart
+final batch = reader.readBatchSync(0);
+
+await for (final batch in reader.readBatches()) {
+  print(batch.numRows);
+}
+```
+
+`RecordBatch.columns` is a list of `ColumnVector` (the same zero-copy
+`ParquetColumn` vectors), and `batch.toTable()` does not copy them.
+
 ## Writing
 
 ```dart

@@ -53,6 +53,17 @@ void main() {
     expect(cdc.commitTimestamp(0), isNull);
   });
 
+  test('CDC materialization applies delete and update order', () {
+    final cdc = CdcTable(_cdcTable());
+    final current = cdc.materialize(keyColumns: ['id']);
+    expect(current.numRows, 1);
+    expect((current['id'] as Int64Column).getInt(0), 2);
+    expect(
+      (current['_change_type'] as BinaryColumn).getString(0),
+      'update_postimage',
+    );
+  });
+
   test('CDC parser accepts common aliases', () {
     expect(CdcTable.parseChangeType('append'), ChangeType.insert);
     expect(CdcTable.parseChangeType('REMOVE'), ChangeType.delete);

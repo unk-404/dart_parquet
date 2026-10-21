@@ -18,6 +18,9 @@
 - Persistent worker pool for parallel row-group reads.
 - Multi-page level/value preallocation, dictionary materialization, zero-copy
   PLAIN typed views and nullable BYTE_ARRAY scan removal.
+- `ParquetReader.fromBytes` caches immutable footer metadata per buffer;
+  `clearMetadataCache()` resets it.
+- `CdcTable.materialize(keyColumns:)` applies insert/update/delete rows in order.
 - `ParquetFeature` / `ParquetUnsupportedFeatureException`, encryption and
   geospatial extension points.
 - `created_by` now reports `parquet-dart version 0.2.0`.

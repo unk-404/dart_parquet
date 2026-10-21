@@ -91,8 +91,9 @@ final class ParquetReader {
   /// backing [ByteBuffer] and is weak, so a buffer can be collected normally.
   /// Call [clearMetadataCache] if a buffer is mutated in place and must be
   /// parsed again.
-  static Expando<ParquetMetadata> _metadataCache =
-      Expando<ParquetMetadata>('parquet.metadata');
+  static Expando<ParquetMetadata> _metadataCache = Expando<ParquetMetadata>(
+    'parquet.metadata',
+  );
 
   /// Drops all cached in-memory metadata.
   static void clearMetadataCache() {
@@ -473,4 +474,3 @@ Future<Footer> _readFooterAsync(ParquetSource source) async {
   );
   return parseFooter(footerBytes);
 }
-
