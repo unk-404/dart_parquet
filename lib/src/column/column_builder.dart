@@ -164,7 +164,9 @@ ParquetColumn buildColumnFromCompact(
   }
 
   if (values is ByteArrayData) {
-    final data = Uint8List(_sumBytes(values));
+    // offsets[last] is the total payload length; using it avoids a second
+    // O(numValues) pass over the offset array.
+    final data = Uint8List(values.offsets[values.numValues]);
     final offsets = Uint32List(numValues + 1);
     var dataPos = 0;
     var src = 0;
@@ -212,14 +214,6 @@ ParquetColumn buildColumnFromCompact(
     'unsupported value container ${values.runtimeType} for '
     '${descriptor.dotPath}',
   );
-}
-
-int _sumBytes(ByteArrayData data) {
-  var total = 0;
-  for (var i = 0; i < data.numValues; i++) {
-    total += data.offsets[i + 1] - data.offsets[i];
-  }
-  return total;
 }
 
 bool _isUtf8(ColumnDescriptor descriptor) {

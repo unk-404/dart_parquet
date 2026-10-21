@@ -3,7 +3,6 @@ library;
 
 import 'dart:typed_data';
 
-import '../compression/codec.dart';
 import '../compression/registry.dart';
 import '../encodings/alp.dart';
 import '../encodings/encoding.dart';
@@ -45,6 +44,14 @@ final class DecodedColumnChunk {
   /// Int32List, Int64Buffer, Float32List, Float64List, Uint8List (booleans,
   /// one byte per value), ByteArrayData or FixedLenData.
   final Object values;
+}
+
+/// A page header plus its zero-copy body view.
+final class _ScannedPage {
+  _ScannedPage(this.header, this.body);
+
+  final PageHeader header;
+  final Bytes body;
 }
 
 /// Reads and decodes the pages of a single column chunk.
@@ -104,27 +111,71 @@ final class ColumnChunkReader {
   }
 
   /// Decodes a chunk whose bytes start at its first page header.
+  ///
+  /// Multi-page flat chunks (`maxRepLevel == 0`) decode PLAIN and dictionary
+  /// values into one chunk-level buffer; level arrays for every multi-page
+  /// chunk are also decoded into one pre-sized buffer. Other shapes (nested,
+  /// DELTA, BYTE_STREAM_SPLIT, ALP, PLAIN BOOLEAN, mixed encodings) keep the
+  /// page-by-page path and still produce identical [DecodedColumnChunk] data.
   DecodedColumnChunk decode(Bytes chunk) {
+    final pages = _scanPages(chunk);
+    var dataPageCount = 0;
+    var totalEntries = 0;
+    var valueByteCapacity = 0;
+    for (final page in pages) {
+      switch (page.header.type) {
+        case PageType.dataPage:
+          final data = page.header.dataPageHeader!;
+          dataPageCount++;
+          totalEntries += data.numValues;
+          valueByteCapacity += page.header.uncompressedPageSize;
+        case PageType.dataPageV2:
+          final data = page.header.dataPageHeaderV2!;
+          dataPageCount++;
+          totalEntries += data.numValues;
+          final levels =
+              data.repetitionLevelsByteLength + data.definitionLevelsByteLength;
+          final valueBytes = page.header.uncompressedPageSize - levels;
+          if (valueBytes > 0) valueByteCapacity += valueBytes;
+        case PageType.dictionaryPage:
+        case PageType.indexPage:
+          break;
+      }
+    }
+
+    final hasRep = descriptor.maxRepLevel > 0;
+    final hasDef = descriptor.maxDefLevel > 0;
+    // Single-page chunks are already exact: decoding levels/values once and
+    // returning them avoids allocating a second pre-sized buffer.
+    final preallocateLevels =
+        dataPageCount > 1 && totalEntries > 0 && (hasRep || hasDef);
+    final repLevels = preallocateLevels && hasRep
+        ? Uint8List(totalEntries)
+        : null;
+    final defLevels = preallocateLevels && hasDef
+        ? Uint8List(totalEntries)
+        : null;
+    final repChunks = <Uint8List>[];
+    final defChunks = <Uint8List>[];
+    final flatWriter = _newFlatValueWriter(
+      pages,
+      dataPageCount,
+      totalEntries,
+      valueByteCapacity,
+    );
+
     final codec = codecFor(metadata.compression);
-    final reader = ByteReader(chunk);
     Object? dictionary;
     final dictIndices = <Int32List>[];
     final valueChunks = <Object>[];
-    final repChunks = <Uint8List>[];
-    final defChunks = <Uint8List>[];
     var totalValues = 0;
     var presentCount = 0;
+    var entryOffset = 0;
     var pageIndex = 0;
 
-    while (reader.remaining > 0) {
-      final header = readPageHeader(reader);
-      if (header.compressedPageSize > reader.remaining) {
-        throw ParquetEofException(
-          'page $pageIndex declares ${header.compressedPageSize} bytes but '
-          'only ${reader.remaining} remain in column ${descriptor.dotPath}',
-        );
-      }
-      final body = reader.readSlice(header.compressedPageSize);
+    for (final page in pages) {
+      final header = page.header;
+      final body = page.body;
       if (verifyCrc && header.crc != null) {
         final expected = header.crc! & 0xFFFFFFFF;
         final actual = crc32(body.asUint8List());
@@ -161,41 +212,120 @@ final class ColumnChunkReader {
             numValues: dictHeader.numValues,
             typeLength: descriptor.typeLength,
           );
+          flatWriter?.setDictionary(dictionary);
         case PageType.dataPage:
-          _decodeV1(
-            header,
+          final dataHeader = header.dataPageHeader!;
+          final numValues = dataHeader.numValues;
+          final raw = codec.decode(
             body,
-            codec,
-            repChunks: repChunks,
-            defChunks: defChunks,
-            valueChunks: valueChunks,
-            dictIndices: dictIndices,
-            onCounts: (total, present) {
-              totalValues += total;
-              presentCount += present;
-            },
+            uncompressedSize: header.uncompressedPageSize,
           );
+          final reader = ByteReader(raw);
+          final pageRep = hasRep
+              ? _readV1Levels(
+                  reader,
+                  descriptor.maxRepLevel,
+                  numValues,
+                  dataHeader.repetitionLevelEncoding,
+                )
+              : null;
+          final pageDef = hasDef
+              ? _readV1Levels(
+                  reader,
+                  descriptor.maxDefLevel,
+                  numValues,
+                  dataHeader.definitionLevelEncoding,
+                )
+              : null;
+          _storeLevels(pageRep, repLevels, repChunks, entryOffset);
+          _storeLevels(pageDef, defLevels, defChunks, entryOffset);
+          final present = hasDef
+              ? _presentCount(pageDef, numValues)
+              : numValues;
+          final valueBytes = reader.readSlice(reader.remaining);
+          _storeValues(
+            flatWriter,
+            dataHeader.encoding,
+            valueBytes,
+            present,
+            dictIndices,
+            valueChunks,
+          );
+          totalValues += numValues;
+          presentCount += present;
+          entryOffset += numValues;
         case PageType.dataPageV2:
-          _decodeV2(
-            header,
-            body,
-            codec,
-            repChunks: repChunks,
-            defChunks: defChunks,
-            valueChunks: valueChunks,
-            dictIndices: dictIndices,
-            onCounts: (total, present) {
-              totalValues += total;
-              presentCount += present;
-            },
+          final dataHeader = header.dataPageHeaderV2!;
+          final numValues = dataHeader.numValues;
+          final repLength = dataHeader.repetitionLevelsByteLength;
+          final defLength = dataHeader.definitionLevelsByteLength;
+          if (repLength + defLength > body.length) {
+            throw ParquetFormatException(
+              'DATA_PAGE_V2 levels exceed page body in ${descriptor.dotPath}',
+            );
+          }
+          final pageRep = hasRep
+              ? decodeLevels(
+                  body.slice(0, repLength),
+                  maxLevel: descriptor.maxRepLevel,
+                  numValues: numValues,
+                  encoding: Encoding.rle,
+                )
+              : null;
+          final pageDef = hasDef
+              ? decodeLevels(
+                  body.slice(repLength, repLength + defLength),
+                  maxLevel: descriptor.maxDefLevel,
+                  numValues: numValues,
+                  encoding: Encoding.rle,
+                )
+              : null;
+          _storeLevels(pageRep, repLevels, repChunks, entryOffset);
+          _storeLevels(pageDef, defLevels, defChunks, entryOffset);
+          final present = hasDef
+              ? _presentCount(pageDef, numValues)
+              : numValues;
+          final valueBody = body.slice(repLength + defLength);
+          final uncompressedValueSize =
+              header.uncompressedPageSize - repLength - defLength;
+          if (uncompressedValueSize < 0) {
+            throw ParquetFormatException(
+              'DATA_PAGE_V2 uncompressed size is smaller than its levels',
+            );
+          }
+          // A valid empty v2 data page can have compressed_page_size=0. The
+          // spec requires readers not to feed those bytes to the decompressor.
+          final valueBytes = dataHeader.isCompressed && valueBody.isNotEmpty
+              ? codec.decode(valueBody, uncompressedSize: uncompressedValueSize)
+              : valueBody;
+          _storeValues(
+            flatWriter,
+            dataHeader.encoding,
+            valueBytes,
+            present,
+            dictIndices,
+            valueChunks,
           );
+          totalValues += numValues;
+          presentCount += present;
+          entryOffset += numValues;
         case PageType.indexPage:
           break;
       }
       pageIndex++;
     }
 
-    if (dictIndices.isNotEmpty) {
+    final finalRepLevels = hasRep
+        ? (repLevels ?? (repChunks.isEmpty ? null : _concatBytes(repChunks)))
+        : null;
+    final finalDefLevels = hasDef
+        ? (defLevels ?? (defChunks.isEmpty ? null : _concatBytes(defChunks)))
+        : null;
+
+    final Object values;
+    if (flatWriter != null) {
+      values = flatWriter.finish(presentCount);
+    } else if (dictIndices.isNotEmpty) {
       if (dictionary == null) {
         throw ParquetFormatException(
           'column ${descriptor.dotPath} uses dictionary indices but has no '
@@ -210,24 +340,24 @@ final class ColumnChunkReader {
         );
       }
       valueChunks.add(materialiseDictionary(dictionary, indices));
+      values = concatValueChunks(valueChunks);
+    } else {
+      values = valueChunks.isEmpty
+          ? _emptyValues(descriptor.physicalType, descriptor.typeLength)
+          : concatValueChunks(valueChunks);
     }
 
-    final repLevels = repChunks.isEmpty ? null : _concatBytes(repChunks);
-    final defLevels = defChunks.isEmpty ? null : _concatBytes(defChunks);
-    if (defLevels != null && defLevels.length != totalValues) {
+    if (finalDefLevels != null && finalDefLevels.length != totalValues) {
       throw ParquetFormatException(
-        'definition levels length ${defLevels.length} != $totalValues',
+        'definition levels length ${finalDefLevels.length} != $totalValues',
       );
     }
-    if (repLevels != null && repLevels.length != totalValues) {
+    if (finalRepLevels != null && finalRepLevels.length != totalValues) {
       throw ParquetFormatException(
-        'repetition levels length ${repLevels.length} != $totalValues',
+        'repetition levels length ${finalRepLevels.length} != $totalValues',
       );
     }
 
-    final values = valueChunks.isEmpty
-        ? _emptyValues(descriptor.physicalType, descriptor.typeLength)
-        : concatValueChunks(valueChunks);
     final actualPresent = _valueCount(values);
     if (actualPresent != presentCount) {
       throw ParquetFormatException(
@@ -238,134 +368,155 @@ final class ColumnChunkReader {
     return DecodedColumnChunk(
       numValues: totalValues,
       presentCount: presentCount,
-      repLevels: repLevels,
-      defLevels: defLevels,
+      repLevels: finalRepLevels,
+      defLevels: finalDefLevels,
       values: values,
     );
   }
 
-  void _decodeV1(
-    PageHeader header,
-    Bytes body,
-    CompressionCodec codec, {
-    required List<Uint8List> repChunks,
-    required List<Uint8List> defChunks,
-    required List<Object> valueChunks,
-    required List<Int32List> dictIndices,
-    required void Function(int total, int present) onCounts,
-  }) {
-    final dataHeader = header.dataPageHeader!;
-    final numValues = dataHeader.numValues;
-    final raw = codec.decode(
-      body,
-      uncompressedSize: header.uncompressedPageSize,
-    );
-    final reader = ByteReader(raw);
-
-    Uint8List? def;
-    if (descriptor.maxRepLevel > 0) {
-      final len = reader.readUint32LE();
-      final levelBytes = reader.readSlice(len);
-      repChunks.add(
-        decodeLevels(
-          levelBytes,
-          maxLevel: descriptor.maxRepLevel,
-          numValues: numValues,
-          encoding: dataHeader.repetitionLevelEncoding,
-        ),
+  /// Parses every page header once and keeps zero-copy body views.
+  ///
+  /// The scan lets the decoder size output buffers by the chunk's total entry
+  /// count and decide, before decoding any body, whether the uniform fast path
+  /// applies.
+  List<_ScannedPage> _scanPages(Bytes chunk) {
+    final pages = <_ScannedPage>[];
+    final reader = ByteReader(chunk);
+    var pageIndex = 0;
+    while (reader.remaining > 0) {
+      final header = readPageHeader(reader);
+      if (header.compressedPageSize > reader.remaining) {
+        throw ParquetEofException(
+          'page $pageIndex declares ${header.compressedPageSize} bytes but '
+          'only ${reader.remaining} remain in column ${descriptor.dotPath}',
+        );
+      }
+      pages.add(
+        _ScannedPage(header, reader.readSlice(header.compressedPageSize)),
       );
+      pageIndex++;
     }
-    if (descriptor.maxDefLevel > 0) {
-      final len = reader.readUint32LE();
-      final levelBytes = reader.readSlice(len);
-      def = decodeLevels(
-        levelBytes,
-        maxLevel: descriptor.maxDefLevel,
-        numValues: numValues,
-        encoding: dataHeader.definitionLevelEncoding,
-      );
-      defChunks.add(def);
-    }
-    final present = _presentCount(def, numValues);
-    final valueBytes = reader.readSlice(reader.remaining);
-    final decoded = _decodeValues(
-      dataHeader.encoding,
-      valueBytes,
-      present,
-      lengthPrefixedBoolean: true,
-    );
-    if (decoded is Int32List && isDictionaryEncoding(dataHeader.encoding)) {
-      dictIndices.add(decoded);
-    } else {
-      valueChunks.add(decoded);
-    }
-    onCounts(numValues, present);
+    return pages;
   }
 
-  void _decodeV2(
-    PageHeader header,
-    Bytes body,
-    CompressionCodec codec, {
-    required List<Uint8List> repChunks,
-    required List<Uint8List> defChunks,
-    required List<Object> valueChunks,
-    required List<Int32List> dictIndices,
-    required void Function(int total, int present) onCounts,
-  }) {
-    final dataHeader = header.dataPageHeaderV2!;
-    final numValues = dataHeader.numValues;
-    final repLen = dataHeader.repetitionLevelsByteLength;
-    final defLen = dataHeader.definitionLevelsByteLength;
-    if (repLen + defLen > body.length) {
-      throw ParquetFormatException(
-        'DATA_PAGE_V2 levels exceed page body in ${descriptor.dotPath}',
+  /// Returns a writer when at least two data pages share one supported
+  /// encoding; single-page and mixed/unsupported chunks keep the exact
+  /// page-by-page path.
+  FlatValueWriter? _newFlatValueWriter(
+    List<_ScannedPage> pages,
+    int dataPageCount,
+    int totalEntries,
+    int valueByteCapacity,
+  ) {
+    if (dataPageCount < 2 || totalEntries <= 0) return null;
+    if (descriptor.maxRepLevel != 0) return null;
+
+    Encoding? encoding;
+    for (final page in pages) {
+      final pageEncoding = switch (page.header.type) {
+        PageType.dataPage => page.header.dataPageHeader!.encoding,
+        PageType.dataPageV2 => page.header.dataPageHeaderV2!.encoding,
+        _ => null,
+      };
+      if (pageEncoding == null) continue;
+      if (encoding == null) {
+        encoding = pageEncoding;
+      } else if (encoding != pageEncoding) {
+        return null;
+      }
+    }
+    if (encoding == null) return null;
+
+    if (encoding == Encoding.plain) {
+      switch (descriptor.physicalType) {
+        // Fixed-width PLAIN pages decode to zero-copy views into the codec
+        // output; `concatValueChunks` already copies them exactly once, so
+        // preallocating here would add an allocation/copy instead of removing
+        // one. Only encodings whose per-page decoders allocate are profitable.
+        case PhysicalType.byteArray:
+        case PhysicalType.fixedLenByteArray:
+        case PhysicalType.int96:
+          return FlatValueWriter(
+            descriptor,
+            totalEntries,
+            byteCapacity: valueByteCapacity,
+          );
+        case PhysicalType.int32:
+        case PhysicalType.int64:
+        case PhysicalType.float:
+        case PhysicalType.double:
+        case PhysicalType.boolean:
+          return null;
+      }
+    }
+    if (isDictionaryEncoding(encoding)) {
+      if (descriptor.physicalType == PhysicalType.boolean) return null;
+      return FlatValueWriter(
+        descriptor,
+        totalEntries,
+        byteCapacity: valueByteCapacity,
       );
     }
-    Uint8List? def;
-    if (descriptor.maxRepLevel > 0) {
-      repChunks.add(
-        decodeLevels(
-          body.slice(0, repLen),
-          maxLevel: descriptor.maxRepLevel,
-          numValues: numValues,
-          encoding: Encoding.rle,
-        ),
-      );
+    return null;
+  }
+
+  Uint8List? _readV1Levels(
+    ByteReader reader,
+    int maxLevel,
+    int numValues,
+    Encoding encoding,
+  ) {
+    final length = reader.readUint32LE();
+    final levelBytes = reader.readSlice(length);
+    return decodeLevels(
+      levelBytes,
+      maxLevel: maxLevel,
+      numValues: numValues,
+      encoding: encoding,
+    );
+  }
+
+  void _storeLevels(
+    Uint8List? pageLevels,
+    Uint8List? preallocated,
+    List<Uint8List> chunks,
+    int offset,
+  ) {
+    if (pageLevels == null) return;
+    if (preallocated != null) {
+      preallocated.setRange(offset, offset + pageLevels.length, pageLevels);
+    } else {
+      chunks.add(pageLevels);
     }
-    if (descriptor.maxDefLevel > 0) {
-      def = decodeLevels(
-        body.slice(repLen, repLen + defLen),
-        maxLevel: descriptor.maxDefLevel,
-        numValues: numValues,
-        encoding: Encoding.rle,
-      );
-      defChunks.add(def);
+  }
+
+  void _storeValues(
+    FlatValueWriter? writer,
+    Encoding encoding,
+    Bytes valueBytes,
+    int present,
+    List<Int32List> dictIndices,
+    List<Object> valueChunks,
+  ) {
+    if (writer != null) {
+      if (isDictionaryEncoding(encoding)) {
+        writer.writeDictionaryIndices(valueBytes, present);
+      } else {
+        writer.writePlain(valueBytes, present);
+      }
+      return;
     }
-    final valueBody = body.slice(repLen + defLen);
-    final uncompressedValueSize = header.uncompressedPageSize - repLen - defLen;
-    if (uncompressedValueSize < 0) {
-      throw ParquetFormatException(
-        'DATA_PAGE_V2 uncompressed size is smaller than its levels',
-      );
-    }
-    // A valid empty v2 data page can have compressed_page_size=0. The spec
-    // requires readers not to feed those bytes to the decompressor.
-    final valueBytes = dataHeader.isCompressed && valueBody.isNotEmpty
-        ? codec.decode(valueBody, uncompressedSize: uncompressedValueSize)
-        : valueBody;
-    final present = _presentCount(def, numValues);
     final decoded = _decodeValues(
-      dataHeader.encoding,
+      encoding,
       valueBytes,
       present,
       lengthPrefixedBoolean: true,
     );
-    if (decoded is Int32List && isDictionaryEncoding(dataHeader.encoding)) {
+    if (decoded is Int32List && isDictionaryEncoding(encoding)) {
       dictIndices.add(decoded);
     } else {
       valueChunks.add(decoded);
     }
-    onCounts(numValues, present);
   }
 
   int _presentCount(Uint8List? def, int numValues) {
@@ -491,10 +642,10 @@ Uint8List _concatBytes(List<Uint8List> chunks) {
     total += c.length;
   }
   final out = Uint8List(total);
-  var pos = 0;
+  var position = 0;
   for (final c in chunks) {
-    out.setRange(pos, pos + c.length, c);
-    pos += c.length;
+    out.setRange(position, position + c.length, c);
+    position += c.length;
   }
   return out;
 }
