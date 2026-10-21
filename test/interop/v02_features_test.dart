@@ -61,12 +61,19 @@ void main() {
     }
   });
 
-  test('unshredded Variant fixtures match upstream semantics', () {
+  test('Variant fixtures match upstream semantics', () {
     final expected = <String, Object?>{
       '047': null,
       '048': true,
       '049': false,
       '050': 34,
+      '005': false,
+      '006': 34,
+      '044': {
+        'c': {'a': 34, 'b': 'iceberg'},
+        'd': -0.0,
+      },
+      '130': <String, Object?>{},
     };
     for (final entry in expected.entries) {
       final reader = ParquetReader.fromBytes(

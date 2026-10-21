@@ -8,6 +8,22 @@ const int _two32 = 0x100000000;
 final class Int64Buffer {
   Int64Buffer(int length) : _lo = Uint32List(length), _hi = Uint32List(length);
 
+  /// Copies a little-endian byte range into two limb arrays.
+  factory Int64Buffer.fromBytes(Uint8List bytes, {int? length}) {
+    final count = length ?? (bytes.length ~/ 8);
+    final out = Int64Buffer(count);
+    final view = ByteData.sublistView(bytes);
+    for (var i = 0; i < count; i++) {
+      final offset = i * 8;
+      out.setLimbs(
+        i,
+        view.getUint32(offset, Endian.little),
+        view.getUint32(offset + 4, Endian.little),
+      );
+    }
+    return out;
+  }
+
   final Uint32List _lo;
   final Uint32List _hi;
 

@@ -121,6 +121,12 @@ Int32List decodePlainInt32(Bytes data, {required int numValues}) {
   _checkCount(numValues);
   final needed = numValues * 4;
   _requireBytes(data, needed, 'PLAIN INT32 data');
+  final source = data.asUint8List();
+  if (Endian.host == Endian.little &&
+      source.offsetInBytes % 4 == 0 &&
+      source.length >= needed) {
+    return Int32List.view(source.buffer, source.offsetInBytes, numValues);
+  }
   final byteData = data.asByteData();
   final out = Int32List(numValues);
   for (var i = 0; i < numValues; i++) {
@@ -134,6 +140,10 @@ Int64Buffer decodePlainInt64(Bytes data, {required int numValues}) {
   _checkCount(numValues);
   final needed = numValues * 8;
   _requireBytes(data, needed, 'PLAIN INT64 data');
+  final source = data.asUint8List();
+  if (Endian.host == Endian.little) {
+    return Int64Buffer.fromBytes(source, length: numValues);
+  }
   final byteData = data.asByteData();
   final out = Int64Buffer(numValues);
   for (var i = 0; i < numValues; i++) {
@@ -149,6 +159,12 @@ Float32List decodePlainFloat32(Bytes data, {required int numValues}) {
   _checkCount(numValues);
   final needed = numValues * 4;
   _requireBytes(data, needed, 'PLAIN FLOAT data');
+  final source = data.asUint8List();
+  if (Endian.host == Endian.little &&
+      source.offsetInBytes % 4 == 0 &&
+      source.length >= needed) {
+    return Float32List.view(source.buffer, source.offsetInBytes, numValues);
+  }
   final byteData = data.asByteData();
   final out = Float32List(numValues);
   for (var i = 0; i < numValues; i++) {
@@ -162,6 +178,12 @@ Float64List decodePlainFloat64(Bytes data, {required int numValues}) {
   _checkCount(numValues);
   final needed = numValues * 8;
   _requireBytes(data, needed, 'PLAIN DOUBLE data');
+  final source = data.asUint8List();
+  if (Endian.host == Endian.little &&
+      source.offsetInBytes % 8 == 0 &&
+      source.length >= needed) {
+    return Float64List.view(source.buffer, source.offsetInBytes, numValues);
+  }
   final byteData = data.asByteData();
   final out = Float64List(numValues);
   for (var i = 0; i < numValues; i++) {

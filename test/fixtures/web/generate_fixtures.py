@@ -9,10 +9,12 @@ base64 constants. Keep every fixture here small (a few KiB) and regenerate with:
 
 The committed ``*.parquet`` files are the source of truth for provenance and
 Dart VM spot checks; the generated ``test/web/web_fixtures.dart`` is what the
-browser tests consume.
+browser tests consume. Some v0.2 fixtures are vendored byte-for-byte from
+apache/parquet-testing (deep nesting, legacy lists, Variant); see ``README.md``
+in this directory for attribution and SHA-256 hashes.
 
 Requires pyarrow (test-only; not a package dependency). The fixture values are
-asserted by ``test/web/web_read_test.dart`` and ``test/wasm/wasm_read_test.dart``.
+asserted by ``test/web/`` and the Wasm wrappers in ``test/wasm/``.
 """
 
 from __future__ import annotations
@@ -128,6 +130,135 @@ PAGE_INDEX = pa.table(
     }
 )
 
+# ---------------------------------------------------------------------------
+# v0.2 deep nesting: arbitrary LIST/STRUCT/MAP combinations.
+#
+# PyArrow writes these with the compliant three-level LIST layout except for the
+# explicitly vendored legacy fixtures (old_list_structure, bare repeated fields).
+# Values intentionally cover null and empty containers at every level.
+# ---------------------------------------------------------------------------
+
+DEEP_LIST_LIST = pa.table(
+    {
+        "id": pa.array([0, 1, 2, 3], type=pa.int32()),
+        "ll": pa.array(
+            [
+                [[1, 2], [3]],
+                [[]],
+                None,
+                [[4], None],
+            ],
+            type=pa.list_(pa.list_(pa.int32())),
+        ),
+    }
+)
+
+DEEP_LIST_STRUCT = pa.table(
+    {
+        "id": pa.array([0, 1, 2, 3], type=pa.int32()),
+        "ls": pa.array(
+            [
+                [{"a": 1, "b": "x"}, None],
+                [],
+                None,
+                [{"a": 2, "b": None}],
+            ],
+            type=pa.list_(
+                pa.struct(
+                    [pa.field("a", pa.int32()), pa.field("b", pa.string())]
+                )
+            ),
+        ),
+        "lsn": pa.array(
+            [
+                [{"a": 1, "tags": ["t1", "t2"]}],
+                [],
+                None,
+                [{"a": 2, "tags": None}, {"a": 3, "tags": []}],
+            ],
+            type=pa.list_(
+                pa.struct(
+                    [
+                        pa.field("a", pa.int32()),
+                        pa.field("tags", pa.list_(pa.string())),
+                    ]
+                )
+            ),
+        ),
+    }
+)
+
+DEEP_STRUCT_CHILDREN = pa.table(
+    {
+        "s": pa.array(
+            [
+                {
+                    "id": 1,
+                    "tags": ["a", "b"],
+                    "attrs": {"k": 1},
+                    "inner": {"x": 1.5, "ys": [1, 2]},
+                },
+                {"id": 2, "tags": [], "attrs": {}, "inner": None},
+                {
+                    "id": 3,
+                    "tags": None,
+                    "attrs": None,
+                    "inner": {"x": None, "ys": None},
+                },
+                None,
+            ],
+            type=pa.struct(
+                [
+                    pa.field("id", pa.int32()),
+                    pa.field("tags", pa.list_(pa.string())),
+                    pa.field("attrs", pa.map_(pa.string(), pa.int32())),
+                    pa.field(
+                        "inner",
+                        pa.struct(
+                            [
+                                pa.field("x", pa.float64()),
+                                pa.field("ys", pa.list_(pa.int32())),
+                            ]
+                        ),
+                    ),
+                ]
+            ),
+        ),
+    }
+)
+
+DEEP_MAP_CHILDREN = pa.table(
+    {
+        "id": pa.array([0, 1, 2, 3], type=pa.int32()),
+        "ml": pa.array(
+            [
+                {"a": [1, 2], "b": None},
+                {},
+                None,
+                {"c": []},
+            ],
+            type=pa.map_(pa.string(), pa.list_(pa.int32())),
+        ),
+        "ms": pa.array(
+            [
+                {"k": {"a": 1, "b": ["x"]}},
+                {"k2": None},
+                {},
+                None,
+            ],
+            type=pa.map_(
+                pa.string(),
+                pa.struct(
+                    [
+                        pa.field("a", pa.int32()),
+                        pa.field("b", pa.list_(pa.string())),
+                    ]
+                ),
+            ),
+        ),
+    }
+)
+
 
 def write(name: str, table: pa.Table, **kwargs) -> None:
     path = HERE / name
@@ -213,6 +344,18 @@ def main() -> None:
         write_batch_size=16,
         write_page_index=True,
     )
+
+    # v0.2 deep nesting: generated shapes. Vendored official fixtures (legacy
+    # two-level LISTs, bare repeated fields, MAP without value, Variant) are
+    # copied into this directory by hand; see README.md for provenance/hashes.
+    write("deep_list_list.parquet", DEEP_LIST_LIST)
+    write("deep_list_struct.parquet", DEEP_LIST_STRUCT)
+    write(
+        "deep_struct_children.parquet",
+        DEEP_STRUCT_CHILDREN,
+        compression="snappy",
+    )
+    write("deep_map_children.parquet", DEEP_MAP_CHILDREN)
 
     emit_dart()
 

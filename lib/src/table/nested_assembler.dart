@@ -69,7 +69,9 @@ ParquetColumn buildNodeColumn(
   return column;
 }
 
-/// Builds an unshredded VARIANT group (`metadata` + `value` BYTE_ARRAY).
+/// Builds a VARIANT group, reconstructing unshredded and simple shredded
+/// `typed_value` fields. Shredded arrays (LIST typed_value) remain a future
+/// extension; object/primitive shredding is supported.
 ParquetColumn _buildVariantColumn(
   SchemaNode node,
   ParquetSchema schema,
@@ -78,37 +80,75 @@ ParquetColumn _buildVariantColumn(
 ) {
   SchemaNode? metadataNode;
   SchemaNode? valueNode;
+  SchemaNode? typedNode;
   for (final child in node.children) {
-    if (child.name == 'metadata') metadataNode = child;
-    if (child.name == 'value') valueNode = child;
+    switch (child.name) {
+      case 'metadata':
+        metadataNode = child;
+      case 'value':
+        valueNode = child;
+      case 'typed_value':
+        typedNode = child;
+    }
   }
   if (metadataNode == null ||
-      valueNode == null ||
       !metadataNode.isLeaf ||
-      !valueNode.isLeaf) {
-    throw ParquetUnsupportedException(
-      'shredded or malformed VARIANT ${node.dotPath} is not supported',
-    );
-  }
-  final metadataDescriptor = schema.column(metadataNode.leafIndex!);
-  final valueDescriptor = schema.column(valueNode.leafIndex!);
-  final metadataDecoded = leaves[metadataNode.leafIndex!];
-  final valueDecoded = leaves[valueNode.leafIndex!];
-  if (metadataDecoded == null || valueDecoded == null) {
-    throw ParquetFormatException('missing VARIANT leaf for ${node.dotPath}');
-  }
-  final metadata = buildFlatColumn(metadataDescriptor, metadataDecoded);
-  final values = buildFlatColumn(valueDescriptor, valueDecoded);
-  if (metadata is! BinaryColumn || values is! BinaryColumn) {
+      typedNode == null && valueNode == null) {
     throw ParquetFormatException(
-      'VARIANT ${node.dotPath} metadata/value must be BYTE_ARRAY',
+      'malformed VARIANT ${node.dotPath}: metadata is required',
     );
   }
-  if (metadata.length != numRows || values.length != numRows) {
+  final columns = <int, ParquetColumn>{};
+  ParquetColumn columnFor(SchemaNode child) {
+    if (!child.isLeaf || child.isRepeated) {
+      throw ParquetUnsupportedException(
+        'shredded VARIANT array/map ${child.dotPath} is not supported in v0.2.0',
+      );
+    }
+    final cached = columns[child.leafIndex!];
+    if (cached != null) return cached;
+    final descriptor = schema.column(child.leafIndex!);
+    final decoded = leaves[child.leafIndex!];
+    if (decoded == null) {
+      throw ParquetFormatException('missing VARIANT leaf ${child.dotPath}');
+    }
+    if (descriptor.maxRepLevel != 0) {
+      throw ParquetUnsupportedException(
+        'shredded VARIANT array ${child.dotPath} is not supported in v0.2.0',
+      );
+    }
+    final built = buildFlatColumn(descriptor, decoded);
+    columns[child.leafIndex!] = built;
+    return built;
+  }
+
+  final metadata = columnFor(metadataNode);
+  if (metadata is! BinaryColumn || metadata.length != numRows) {
     throw ParquetFormatException(
-      'VARIANT ${node.dotPath} leaf length does not match row count',
+      'VARIANT ${node.dotPath} metadata must be a BYTE_ARRAY column',
     );
   }
+  final rawValues = valueNode == null ? null : columnFor(valueNode);
+  if (rawValues != null &&
+      (rawValues is! BinaryColumn || rawValues.length != numRows)) {
+    throw ParquetFormatException(
+      'VARIANT ${node.dotPath} value must be a BYTE_ARRAY column',
+    );
+  }
+
+  VariantValue? typedAt(int row) {
+    if (typedNode == null) return null;
+    return _variantTypedAt(typedNode, row, columnFor);
+  }
+
+  VariantValue? rawAt(int row) {
+    if (rawValues == null || rawValues.isNull(row)) return null;
+    return VariantCodec.decode(
+      (rawValues as BinaryColumn).getBytes(row),
+      VariantMetadata.fromBytes(metadata.getBytes(row)),
+    );
+  }
+
   final validity = Validity(numRows);
   final decoded = List<Variant?>.filled(numRows, null);
   for (var row = 0; row < numRows; row++) {
@@ -116,26 +156,182 @@ ParquetColumn _buildVariantColumn(
       validity.setNull(row);
       continue;
     }
-    if (values.isNull(row)) {
-      throw ParquetUnsupportedException(
-        'shredded VARIANT ${node.dotPath} is not supported in v0.2.0',
-      );
+    final metadataValue = VariantMetadata.fromBytes(metadata.getBytes(row));
+    final typed = typedAt(row);
+    final raw = rawAt(row);
+    VariantValue? value;
+    if (typed != null) {
+      if (raw is VariantObject && typed is VariantObject) {
+        value = VariantObject(<String, VariantValue>{
+          ...raw.fields,
+          ...typed.fields,
+        });
+      } else {
+        value = typed;
+      }
+    } else {
+      value = raw ?? VariantValue.nullValue;
     }
-    try {
-      decoded[row] = Variant.decode(
-        metadata.getBytes(row),
-        values.getBytes(row),
-      );
-    } on ParquetException {
-      rethrow;
-    } on Object catch (error) {
-      throw ParquetFormatException(
-        'invalid VARIANT value at ${node.dotPath}[$row]',
-        error,
-      );
-    }
+    decoded[row] = Variant(metadata: metadataValue, value: value);
   }
   return VariantColumn(name: node.name, values: decoded, validity: validity);
+}
+
+VariantValue? _variantTypedAt(
+  SchemaNode node,
+  int row,
+  ParquetColumn Function(SchemaNode) columnFor,
+) {
+  if (node.isLeaf) {
+    final column = columnFor(node);
+    if (column.isNull(row)) return null;
+    return _variantPrimitive(node, column.value(row), column, row);
+  }
+  if (node.isRepeated) {
+    throw ParquetUnsupportedException(
+      'shredded VARIANT array ${node.dotPath} is not supported in v0.2.0',
+    );
+  }
+  final kind = node.logicalType?.kind;
+  if (kind == LogicalTypeKind.list || kind == LogicalTypeKind.map) {
+    throw ParquetUnsupportedException(
+      'shredded VARIANT ${kind?.name} ${node.dotPath} is not supported in ' 'v0.2.0',
+    );
+  }
+  final fields = <String, VariantValue>{};
+  for (final field in node.children) {
+    SchemaNode? valueChild;
+    SchemaNode? typedChild;
+    for (final child in field.children) {
+      if (child.name == 'value') valueChild = child;
+      if (child.name == 'typed_value') typedChild = child;
+    }
+    VariantValue? value;
+    if (typedChild != null) value = _variantTypedAt(typedChild, row, columnFor);
+    if (value == null && valueChild != null) {
+      final valueColumn = columnFor(valueChild);
+      if (!valueColumn.isNull(row)) {
+        throw ParquetFormatException(
+          'partially shredded VARIANT ${field.dotPath} value is not ' 'reconstructable yet',
+        );
+      }
+    }
+    if (value != null) fields[field.name] = value;
+  }
+  return VariantObject(fields);
+}
+
+VariantValue _variantPrimitive(
+  SchemaNode node,
+  Object? value,
+  ParquetColumn column,
+  int row,
+) {
+  final type = node.physicalType;
+  final logical = node.logicalType;
+  switch (type) {
+    case PhysicalType.boolean:
+      return VariantBoolean(value as bool);
+    case PhysicalType.int32:
+      final intValue = value as int;
+      if (logical is DateLogicalType) return VariantDate(intValue);
+      if (logical is DecimalLogicalType) {
+        return VariantDecimal(
+          BigInt.from(intValue),
+          scale: logical.scale,
+        );
+      }
+      if (logical is TimeLogicalType) {
+        return VariantTime(intValue);
+      }
+      if (logical is IntegerLogicalType) {
+        return VariantInt(
+          intValue,
+          switch (logical.bitWidth) {
+            8 => VariantIntWidth.int8,
+            16 => VariantIntWidth.int16,
+            _ => VariantIntWidth.int32,
+          },
+        );
+      }
+      return VariantInt(intValue, VariantIntWidth.int32);
+    case PhysicalType.int64:
+      final intValue = _variantInt(value);
+      if (logical is TimestampLogicalType) {
+        return VariantTimestamp(
+          value: intValue,
+          unit: logical.unit == TimeUnit.nanos
+              ? VariantTimeUnit.nanos
+              : VariantTimeUnit.micros,
+          isAdjustedToUtc: logical.isAdjustedToUtc,
+        );
+      }
+      if (logical is TimeLogicalType) return VariantTime(intValue);
+      if (logical is DecimalLogicalType) {
+        return VariantDecimal(BigInt.from(intValue), scale: logical.scale);
+      }
+      return VariantInt(intValue, VariantIntWidth.int64);
+    case PhysicalType.float:
+      return VariantFloat((value as num).toDouble());
+    case PhysicalType.double:
+      return VariantDouble((value as num).toDouble());
+    case PhysicalType.byteArray:
+      if (value is String) {
+        return logical?.kind == LogicalTypeKind.json ||
+                logical?.kind == LogicalTypeKind.enumType
+            ? VariantString(value)
+            : logical?.kind == LogicalTypeKind.string
+            ? VariantString(value)
+            : VariantBinary(value.codeUnits);
+      }
+      final bytes = value is Uint8List ? value : Uint8List(0);
+      if (logical is DecimalLogicalType) {
+        return VariantDecimal(
+          _bigIntFromBigEndian(bytes),
+          scale: logical.scale,
+        );
+      }
+      if (logical?.kind == LogicalTypeKind.uuid) return VariantUuid(bytes);
+      if (logical?.kind == LogicalTypeKind.string ||
+          logical?.kind == LogicalTypeKind.enumType ||
+          logical?.kind == LogicalTypeKind.json) {
+        return VariantString(String.fromCharCodes(bytes));
+      }
+      return VariantBinary(bytes);
+    case PhysicalType.fixedLenByteArray:
+      final bytes = value is Uint8List ? value : Uint8List(0);
+      if (logical is DecimalLogicalType) {
+        return VariantDecimal(
+          _bigIntFromBigEndian(bytes),
+          scale: logical.scale,
+        );
+      }
+      if (logical?.kind == LogicalTypeKind.uuid) return VariantUuid(bytes);
+      return VariantBinary(bytes);
+    case PhysicalType.int96:
+      throw ParquetUnsupportedException(
+        'shredded VARIANT INT96 ${node.dotPath} is not supported',
+      );
+    case null:
+      throw ParquetFormatException('VARIANT leaf ${node.dotPath} has no type');
+  }
+}
+
+int _variantInt(Object? value) {
+  if (value is int) return value;
+  if (value is BigInt) return value.toInt();
+  throw ParquetFormatException('VARIANT integer has type ${value.runtimeType}');
+}
+
+BigInt _bigIntFromBigEndian(Uint8List bytes) {
+  var value = BigInt.zero;
+  for (final byte in bytes) {
+    value = (value << 8) | BigInt.from(byte);
+  }
+  if (bytes.isNotEmpty && bytes.first & 0x80 != 0) {
+    value -= BigInt.one << (bytes.length * 8);
+  }
+  return value;
 }
 
 /// One schema position, optionally with its declared `repeated` repetition
